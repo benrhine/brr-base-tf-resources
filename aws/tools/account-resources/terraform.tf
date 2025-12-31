@@ -29,6 +29,6 @@ terraform {
     region                  = "us-east-2"
     encrypt                 = true
     use_lockfile            = true
-    profile                 = "brr-tools-admin"
+    # profile                 = "brr-tools-admin"
   }
 }
