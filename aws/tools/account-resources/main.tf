@@ -54,7 +54,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 # Create an IAM role to be assumed by GitHub Action
 module "github_oidc_ci_assume_role" {
-  source = "git::git@github.com:benrhine/brr-iam-roles-module.git?ref=v0.0.1.1" # Where to find the module
+  source = "git::https://github.com/benrhine/brr-iam-roles-module.git?ref=v0.0.1.1" # Where to find the module
   ######################################################################################################################   # Value passed in via variables.tf
   # iam_role_name            = "${var.iam_role_name}_${local.convert_to_underscores}"
   iam_role_name            = "${var.iam_role_name}"
@@ -103,7 +103,7 @@ resource "github_actions_secret" "env_secret_3" {
 # Store role for CI Actions in Aws: This is to ensure role is accessible for future actions
 ########################################################################################################################
 module "ci_role_to_assume" {
-  source = "git::git@github.com:benrhine/brr-ssm-module.git?ref=v0.0.1.1" # Where to find the module
+  source = "git::https://github.com/benrhine:benrhine/brr-ssm-module.git?ref=v0.0.1.1" # Where to find the module
   ######################################################################################################################
   property_name             = "/${var.business_area_name}/${lower(var.team_name)}/${lower(var.current_env)}/${var.framework_prefix}/${var.iam_role_name}_${local.convert_to_underscores}" # Custom defined value
   property_description      = "Role to assume during CI jobs"                                                                                                               # Custom defined value
