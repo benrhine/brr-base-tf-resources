@@ -27,7 +27,9 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
+        working-directory: aws/tools/account-resources
         run: terraform init
 
       - name: Plan terraform Changes
+        working-directory: aws/tools/account-resources
         run: terraform plan
