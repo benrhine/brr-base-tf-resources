@@ -1,0 +1,13 @@
+# IntelliJ
+.idea
+*.iml
+
+# Terraform
+*.terraform
+*.terraform.lock.hcl
+*terraform.tfstate.backup
+*terraform.tfstate
+*.tfvars
+
+# MacOS
+*.DS_Store
