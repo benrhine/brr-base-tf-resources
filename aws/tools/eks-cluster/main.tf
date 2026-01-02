@@ -226,12 +226,47 @@ resource "aws_eks_node_group" "eks_node_group" {
 }
 
 #Kubernetes resources in Terraform
-# resource "kubernetes_namespace" "terraform-argocd" {
-#   metadata {
-#     name = "argocod"
-#   }
-# }
-#
+resource "kubernetes_namespace" "terraform-argocd" {
+  metadata {
+    name = "argocod"
+  }
+}
+
+resource "helm_release" "argocd" {
+  name             = "argocd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  namespace        = "argocd"
+  create_namespace = true
+  version          = "5.51.6"
+
+  values = [
+    # file("${path.module}/argocd-values.yaml")
+    yamlencode({
+      server = {
+        extraArgs = ["--insecure"]
+        service = {
+          type = "LoadBalancer"
+        }
+        ingress = {
+          enabled = true
+          hosts   = ["argocd.example.com"]
+          tls     = []
+        }
+      }
+      dex = {
+        enabled = true
+      }
+      notifications = {
+        enabled = true
+      }
+      ha = {
+        enabled = true
+      }
+    })
+  ]
+}
+
 # resource "kubernetes_deployment" "argocd" {
 #   metadata {
 #     name      = "argocd"
