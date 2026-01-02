@@ -235,22 +235,29 @@ data "aws_eks_cluster_auth" "eks_cluster" {
 
 #Kubernetes provider for Terraform to connect with AWS EKS Cluster
 provider "kubernetes" {
-  host                   = data.aws_eks_cluster.eks_cluster.endpoint
-  token                  = data.aws_eks_cluster_auth.eks_cluster.token
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
+  # host                   = data.aws_eks_cluster.eks_cluster.endpoint
+  # token                  = data.aws_eks_cluster_auth.eks_cluster.token
+  # cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
+  config_path = "~/.kube/config"
+}
+
+provider "helm" {
+  kubernetes {
+    config_path = "~/.kube/config"
+  }
 }
 
 #Kubernetes resources in Terraform
-# resource "kubernetes_namespace" "terraform-k8s" {
+# resource "kubernetes_namespace" "terraform-argocd" {
 #   metadata {
-#     name = "terraform-k8s"
+#     name = "argocod"
 #   }
 # }
 #
-# resource "kubernetes_deployment" "nginx" {
+# resource "kubernetes_deployment" "argocd" {
 #   metadata {
-#     name      = "nginx"
-#     namespace = kubernetes_namespace.terraform-k8s.metadata[0].name
+#     name      = "argocd"
+#     namespace = kubernetes_namespace.terraform-argocd.metadata[0].name
 #   }
 #
 #   spec {
@@ -258,21 +265,21 @@ provider "kubernetes" {
 #
 #     selector {
 #       match_labels = {
-#         app = "nginx"
+#         app = "argocd"
 #       }
 #     }
 #
 #     template {
 #       metadata {
 #         labels = {
-#           app = "nginx"
+#           app = "argocd"
 #         }
 #       }
 #
 #       spec {
 #         container {
-#           name  = "nginx"
-#           image = "nginx:1.21.6"
+#           name  = "argocd"
+#           image = "argocd:1.21.6"
 #
 #           port {
 #             container_port = 80
@@ -283,15 +290,15 @@ provider "kubernetes" {
 #   }
 # }
 #
-# resource "kubernetes_service" "nginx" {
+# resource "kubernetes_service" "argocd" {
 #   metadata {
-#     name      = "nginx"
-#     namespace = kubernetes_namespace.terraform-k8s.metadata[0].name
+#     name      = "argocd"
+#     namespace = kubernetes_namespace.terraform-argocd.metadata[0].name
 #   }
 #
 #   spec {
 #     selector = {
-#       app = kubernetes_deployment.nginx.spec[0].template[0].metadata[0].labels.app
+#       app = kubernetes_deployment.argocd.spec[0].template[0].metadata[0].labels.app
 #     }
 #
 #     port {
