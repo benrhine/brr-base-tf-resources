@@ -10,17 +10,18 @@ terraform {
     }
     kubernetes = {
       source = "hashicorp/kubernetes"
-      version = "2.30.0"
+      # version = "2.30.0"
+      version = ">= 3.0"
     }
   }
   required_version = "~> 1.14.3"
 
-  # backend "s3" {
-  #   bucket                  = "tf-state-zvsso9t4"
-  #   key                     = "account-resources/terraform.tfstate"
-  #   region                  = "us-east-2"
-  #   encrypt                 = true
-  #   use_lockfile            = true
-  #   # profile                 = "brr-tools-admin"
-  # }
+  backend "s3" {
+    bucket                  = "tf-state-zvsso9t4"
+    key                     = "eks-cluster/terraform.tfstate"
+    region                  = "us-east-2"
+    encrypt                 = true
+    use_lockfile            = true
+    # profile                 = "brr-tools-admin"
+  }
 }

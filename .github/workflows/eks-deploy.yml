@@ -33,3 +33,8 @@ jobs:
       - name: Plan terraform Changes
         working-directory: aws/tools/eks-cluster
         run: terraform plan
+
+
+# https://dev.to/terrateam/building-a-cicd-pipeline-for-terraform-with-github-actions-step-by-step-guide-3dlp
+# deals with how to save a plan and execute
+# https://medium.com/@kiran007anil/automating-terraform-deployments-with-github-actions-3a3d8f78b49d
