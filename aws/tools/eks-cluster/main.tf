@@ -225,28 +225,6 @@ resource "aws_eks_node_group" "eks_node_group" {
 
 }
 
-data "aws_eks_cluster" "eks_cluster" {
-  name = aws_eks_cluster.eks_cluster.name
-}
-
-data "aws_eks_cluster_auth" "eks_cluster" {
-  name = aws_eks_cluster.eks_cluster.name
-}
-
-#Kubernetes provider for Terraform to connect with AWS EKS Cluster
-provider "kubernetes" {
-  # host                   = data.aws_eks_cluster.eks_cluster.endpoint
-  # token                  = data.aws_eks_cluster_auth.eks_cluster.token
-  # cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
-  config_path = "~/.kube/config"
-}
-
-provider "helm" {
-  kubernetes {
-    config_path = "~/.kube/config"
-  }
-}
-
 #Kubernetes resources in Terraform
 # resource "kubernetes_namespace" "terraform-argocd" {
 #   metadata {

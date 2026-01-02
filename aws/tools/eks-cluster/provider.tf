@@ -17,3 +17,18 @@ provider "aws" {
 # TODO
 # I believe these will have to be modified to receive client/secret from buildspec
 # only reason the main one works this way is because it is initially executed from local
+
+#Kubernetes provider for Terraform to connect with AWS EKS Cluster
+provider "kubernetes" {
+  # host                   = data.aws_eks_cluster.eks_cluster.endpoint
+  # token                  = data.aws_eks_cluster_auth.eks_cluster.token
+  # cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
+  config_path = "~/.kube/config"
+}
+
+provider "helm" {
+  kubernetes {
+    config_path = "~/.kube/config"
+  }
+}
+
