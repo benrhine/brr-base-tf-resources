@@ -5,7 +5,7 @@ provider "aws" {
   # alias   = "brr-tools"
   region  = "us-east-2"
   # shared_config_files = ["~/.aws/config"]
-  profile = "brr-tools-admin"
+  # profile = "brr-tools-admin"
 }
 
 # provider "aws" {
