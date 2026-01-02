@@ -34,6 +34,10 @@ jobs:
         working-directory: aws/tools/eks-cluster
         run: terraform plan
 
+      - name: Plan terraform Changes
+        working-directory: aws/tools/eks-cluster
+        run: terraform apply -auto-approve
+
 
 # https://dev.to/terrateam/building-a-cicd-pipeline-for-terraform-with-github-actions-step-by-step-guide-3dlp
 # deals with how to save a plan and execute
