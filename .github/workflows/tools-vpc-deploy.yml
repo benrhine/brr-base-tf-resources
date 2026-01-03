@@ -1,6 +1,6 @@
 name: Terraform Deploy VPC ( TOOLS Account )
 on:
-  push:
+#  push:
   workflow_dispatch:
     inputs:
       environment:

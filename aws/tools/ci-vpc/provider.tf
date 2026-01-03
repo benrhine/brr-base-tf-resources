@@ -5,7 +5,7 @@ provider "aws" {
   # alias   = "brr-tools"
   region  = "us-east-2"
   # shared_config_files = ["~/.aws/config"]
-  profile = "brr-tools-admin"
+  # profile = "brr-tools-admin"
 }
 
 # provider "aws" {
@@ -14,10 +14,6 @@ provider "aws" {
 #   profile = "brr-np-admin"
 # }
 
-provider "github" {
-  owner = "benrhine"
-  token = var.github_token
-}
 
 # TODO
 # I believe these will have to be modified to receive client/secret from buildspec

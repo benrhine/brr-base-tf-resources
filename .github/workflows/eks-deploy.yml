@@ -1,6 +1,7 @@
 name: Terraform Deploy ( TOOLS Account )
 on:
-  push:
+  #  push:
+  workflow_dispatch:
 
 permissions:
   actions: write
