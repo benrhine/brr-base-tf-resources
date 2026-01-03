@@ -46,11 +46,11 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        working-directory: aws/tools/eks-cluster
+        working-directory: aws/tools/ci-vpc
         run: terraform init
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/eks-cluster
+        working-directory: aws/tools/ci-vpc
         env:
           TF_VAR_environment: ${{ github.event.inputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
@@ -58,7 +58,7 @@ jobs:
         run: terraform plan
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/eks-cluster
+        working-directory: aws/tools/ci-vpc
         env:
           TF_VAR_environment: ${{ github.event.inputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
