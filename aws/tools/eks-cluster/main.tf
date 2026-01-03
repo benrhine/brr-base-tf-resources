@@ -226,99 +226,99 @@ resource "aws_eks_node_group" "eks_node_group" {
 }
 
 #Kubernetes resources in Terraform
-resource "kubernetes_namespace" "terraform-argocd" {
+resource "kubernetes_namespace" "terraform-nginx" {
   metadata {
-    name = "argocod"
+    name = "nginx"
   }
 }
 
-resource "helm_release" "argocd" {
-  name             = "argocd"
-  repository       = "https://argoproj.github.io/argo-helm"
-  chart            = "argo-cd"
-  namespace        = "argocd"
-  create_namespace = true
-  version          = "5.51.6"
+# resource "helm_release" "argocd" {
+#   name             = "argocd"
+#   repository       = "https://argoproj.github.io/argo-helm"
+#   chart            = "argo-cd"
+#   namespace        = "argocd"
+#   create_namespace = true
+#   version          = "5.51.6"
+#
+#   values = [
+#     # file("${path.module}/argocd-values.yaml")
+#     yamlencode({
+#       server = {
+#         extraArgs = ["--insecure"]
+#         service = {
+#           type = "LoadBalancer"
+#         }
+#         ingress = {
+#           enabled = true
+#           hosts   = ["argocd.example.com"]
+#           tls     = []
+#         }
+#       }
+#       dex = {
+#         enabled = true
+#       }
+#       notifications = {
+#         enabled = true
+#       }
+#       ha = {
+#         enabled = true
+#       }
+#     })
+#   ]
+# }
 
-  values = [
-    # file("${path.module}/argocd-values.yaml")
-    yamlencode({
-      server = {
-        extraArgs = ["--insecure"]
-        service = {
-          type = "LoadBalancer"
+resource "kubernetes_deployment" "nginx" {
+  metadata {
+    name      = "nginx"
+    namespace = kubernetes_namespace.terraform-nginx.metadata[0].name
+  }
+
+  spec {
+    replicas = 1
+
+    selector {
+      match_labels = {
+        app = "nginx"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "nginx"
         }
-        ingress = {
-          enabled = true
-          hosts   = ["argocd.example.com"]
-          tls     = []
+      }
+
+      spec {
+        container {
+          name  = "nginx"
+          image = "nginx:1.21.6"
+
+          port {
+            container_port = 80
+          }
         }
       }
-      dex = {
-        enabled = true
-      }
-      notifications = {
-        enabled = true
-      }
-      ha = {
-        enabled = true
-      }
-    })
-  ]
+    }
+  }
 }
 
-# resource "kubernetes_deployment" "argocd" {
-#   metadata {
-#     name      = "argocd"
-#     namespace = kubernetes_namespace.terraform-argocd.metadata[0].name
-#   }
-#
-#   spec {
-#     replicas = 1
-#
-#     selector {
-#       match_labels = {
-#         app = "argocd"
-#       }
-#     }
-#
-#     template {
-#       metadata {
-#         labels = {
-#           app = "argocd"
-#         }
-#       }
-#
-#       spec {
-#         container {
-#           name  = "argocd"
-#           image = "argocd:1.21.6"
-#
-#           port {
-#             container_port = 80
-#           }
-#         }
-#       }
-#     }
-#   }
-# }
-#
-# resource "kubernetes_service" "argocd" {
-#   metadata {
-#     name      = "argocd"
-#     namespace = kubernetes_namespace.terraform-argocd.metadata[0].name
-#   }
-#
-#   spec {
-#     selector = {
-#       app = kubernetes_deployment.argocd.spec[0].template[0].metadata[0].labels.app
-#     }
-#
-#     port {
-#       port        = 80
-#       target_port = 80
-#     }
-#
-#     type = "LoadBalancer"
-#   }
-# }
+resource "kubernetes_service" "nginx" {
+  metadata {
+    name      = "nginx"
+    namespace = kubernetes_namespace.terraform-nginx.metadata[0].name
+  }
+
+  spec {
+    selector = {
+      app = kubernetes_deployment.nginx.spec[0].template[0].metadata[0].labels.app
+    }
+
+    port {
+      port        = 80
+      target_port = 80
+    }
+
+    type = "LoadBalancer"
+  }
+}

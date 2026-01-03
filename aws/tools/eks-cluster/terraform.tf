@@ -21,7 +21,7 @@ terraform {
   required_version = "~> 1.14.3"
 
   backend "s3" {
-    bucket                  = "tf-state-zvsso9t4"
+    bucket                  = "tf-state-7512dai6"
     key                     = "eks-cluster/terraform.tfstate"
     region                  = "us-east-2"
     encrypt                 = true
