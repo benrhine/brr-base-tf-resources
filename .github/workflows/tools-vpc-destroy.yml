@@ -19,8 +19,8 @@ on:
       project-id:
         description: "Custom Id"
         required: false
-        type: number
-        default: 001
+        type: string
+        default: "001"
 
 permissions:
   actions: write

@@ -5,6 +5,7 @@ resource "aws_vpc" "vpc" {
     name = "${var.project_name}-${var.project_id}-${random_string.suffix.result}"
     org = var.org_name_abv
     team = var.team_name
+    # create_date = "XXX"
   }
 }
 #####################################################################################
