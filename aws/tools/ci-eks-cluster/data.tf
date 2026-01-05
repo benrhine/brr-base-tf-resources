@@ -14,6 +14,6 @@ data "aws_subnets" "private" {
 
   filter {
     name   = "tag:retrieval"
-    values = ["private_eks_subnet"]
+    values = ["private"]
   }
 }
