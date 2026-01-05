@@ -10,8 +10,8 @@ terraform {
   required_version = "~> 1.14.3"
 
   backend "s3" {
-    bucket                  = "tf-state-7512dai6"
-    key                     = "account-resources/terraform.tfstate"
+    bucket                  = "tf-state-fkguuudu"
+    key                     = "ci-eks-cluster/terraform.tfstate"
     region                  = "us-east-2"
     encrypt                 = true
     use_lockfile            = true
