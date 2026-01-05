@@ -3,6 +3,7 @@ resource "aws_vpc" "vpc" {
   cidr_block = "10.0.0.0/16"
   tags = {
     name = "${var.project_name}-${var.project_id}-${random_string.suffix.result}"
+    retrieval = "test-retrieval"
     org = var.org_name_abv
     team = var.team_name
     # create_date = "XXX"
@@ -20,6 +21,7 @@ resource "aws_subnet" "public_eks_subnet" {
   map_public_ip_on_launch = true
   tags = {
     name = "${var.project_name}-${var.project_id}-public-subnet-${count.index}"
+    retrieval = "test-retrieval"
   }
 }
 
@@ -33,6 +35,7 @@ resource "aws_subnet" "private_eks_subnet" {
   map_public_ip_on_launch = true
   tags = {
     name = "${var.project_name}-${var.project_id}-private-subnet-${count.index}"
+    retrieval = "test-retrieval"
   }
 }
 
