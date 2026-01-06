@@ -16,6 +16,11 @@ data "aws_subnets" "public" {
     name   = "tag:retrieval"
     values = ["test-retrieval-public"]
   }
+
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
 }
 
 data "aws_subnets" "private" {
@@ -27,5 +32,10 @@ data "aws_subnets" "private" {
   filter {
     name   = "tag:retrieval"
     values = ["test-retrieval-private"]
+  }
+
+  filter {
+    name   = "state"
+    values = ["available"]
   }
 }
