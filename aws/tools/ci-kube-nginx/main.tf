@@ -1,5 +1,5 @@
 
-resource "kubernetes_namespace_v1" "terraform-nginx" {
+resource "kubernetes_namespace" "terraform-nginx" {
   metadata {
     name = "argocd"
   }
@@ -9,7 +9,7 @@ resource "kubernetes_namespace_v1" "terraform-nginx" {
 resource "kubernetes_deployment" "nginx" {
   metadata {
     name      = "argocd"
-    namespace = kubernetes_namespace_v1.terraform-nginx.metadata[0].name
+    namespace = kubernetes_namespace.terraform-nginx.metadata[0].name
   }
 
   spec {
@@ -45,7 +45,7 @@ resource "kubernetes_deployment" "nginx" {
 resource "kubernetes_service" "nginx" {
   metadata {
     name      = "nginx"
-    namespace = kubernetes_namespace_v1.terraform-nginx.metadata[0].name
+    namespace = kubernetes_namespace.terraform-nginx.metadata[0].name
   }
 
   spec {
