@@ -1,15 +1,15 @@
 
-resource "kubernetes_namespace_v1" "terraform-nginx" {
+resource "kubernetes_namespace_v1" "argocd" {
   metadata {
-    name = "nginx"
+    name = "argocd"
   }
 }
 
 
-resource "kubernetes_deployment" "nginx" {
+resource "kubernetes_deployment" "argocd_server" {
   metadata {
-    name      = "nginx"
-    namespace = kubernetes_namespace_v1.terraform-nginx.metadata[0].name
+    name      = "argocd-server"
+    namespace = kubernetes_namespace_v1.argocd.metadata[0].name
   }
 
   spec {
@@ -17,24 +17,43 @@ resource "kubernetes_deployment" "nginx" {
 
     selector {
       match_labels = {
-        app = "nginx"
+        app = "argocd-server"
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "nginx"
+          app = "argocd-server"
         }
       }
 
       spec {
         container {
-          name  = "nginx"
-          image = "nginx:1.21.6"
+          name  = "argocd-server"
+          image = "argoproj/argocd:v2.9.12" # latest stable version, adjust if needed
 
           port {
-            container_port = 80
+            container_port = 8080
+          }
+
+          # Optional: expose health checks
+          liveness_probe {
+            http_get {
+              path = "/healthz"
+              port = 8080
+            }
+            initial_delay_seconds = 10
+            period_seconds        = 10
+          }
+
+          readiness_probe {
+            http_get {
+              path = "/healthz"
+              port = 8080
+            }
+            initial_delay_seconds = 5
+            period_seconds        = 5
           }
         }
       }
@@ -42,15 +61,15 @@ resource "kubernetes_deployment" "nginx" {
   }
 }
 
-resource "kubernetes_service" "nginx" {
+resource "kubernetes_service" "argocd_server" {
   metadata {
-    name      = "nginx"
-    namespace = kubernetes_namespace_v1.terraform-nginx.metadata[0].name
+    name      = "argocd-server"
+    namespace = kubernetes_namespace_v1.argocd.metadata[0].name
   }
 
   spec {
     selector = {
-      app = kubernetes_deployment.nginx.spec[0].template[0].metadata[0].labels.app
+      app = kubernetes_deployment.argocd_server.spec[0].template[0].metadata[0].labels.app
     }
 
     port {

@@ -1,15 +1,15 @@
 
-resource "kubernetes_namespace_v1" "terraform-argocd" {
+resource "kubernetes_namespace_v1" "terraform-nginx" {
   metadata {
     name = "argocd"
   }
 }
 
 
-resource "kubernetes_deployment" "argocd" {
+resource "kubernetes_deployment" "nginx" {
   metadata {
     name      = "argocd"
-    namespace = kubernetes_namespace_v1.terraform-argocd.metadata[0].name
+    namespace = kubernetes_namespace_v1.terraform-nginx.metadata[0].name
   }
 
   spec {
@@ -17,21 +17,21 @@ resource "kubernetes_deployment" "argocd" {
 
     selector {
       match_labels = {
-        app = "argocd"
+        app = "nginx"
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "argocd"
+          app = "nginx"
         }
       }
 
       spec {
         container {
-          name  = "argocd"
-          image = "argocd:1.21.6"
+          name  = "nginx"
+          image = "nginx:1.21.6"
 
           port {
             container_port = 80
@@ -44,13 +44,13 @@ resource "kubernetes_deployment" "argocd" {
 
 resource "kubernetes_service" "nginx" {
   metadata {
-    name      = "argocd"
-    namespace = kubernetes_namespace_v1.terraform-argocd.metadata[0].name
+    name      = "nginx"
+    namespace = kubernetes_namespace_v1.terraform-nginx.metadata[0].name
   }
 
   spec {
     selector = {
-      app = kubernetes_deployment.argocd.spec[0].template[0].metadata[0].labels.app
+      app = kubernetes_deployment.nginx.spec[0].template[0].metadata[0].labels.app
     }
 
     port {
