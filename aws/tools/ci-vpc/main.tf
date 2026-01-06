@@ -32,7 +32,7 @@ resource "aws_subnet" "private_eks_subnet" {
   # availability_zone = element(["us-east-2a", "us-east-2b"], count.index)
   availability_zone       = data.aws_availability_zones.available.names[count.index]
 
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   tags = {
     name = "${var.project_name}-${var.project_id}-private-subnet-${count.index}"
     retrieval = "test-retrieval-private"
