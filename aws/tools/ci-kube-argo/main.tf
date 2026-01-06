@@ -1,5 +1,5 @@
 
-resource "kubernetes_namespace_v1" "argocd" {
+resource "kubernetes_namespace" "argocd" {
   metadata {
     name = "argocd"
   }
@@ -9,7 +9,7 @@ resource "kubernetes_namespace_v1" "argocd" {
 resource "kubernetes_deployment" "argocd_server" {
   metadata {
     name      = "argocd-server"
-    namespace = kubernetes_namespace_v1.argocd.metadata[0].name
+    namespace = kubernetes_namespace.argocd.metadata[0].name
   }
 
   spec {
@@ -64,7 +64,7 @@ resource "kubernetes_deployment" "argocd_server" {
 resource "kubernetes_service" "argocd_server" {
   metadata {
     name      = "argocd-server"
-    namespace = kubernetes_namespace_v1.argocd.metadata[0].name
+    namespace = kubernetes_namespace.argocd.metadata[0].name
   }
 
   spec {

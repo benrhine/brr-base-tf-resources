@@ -1,4 +1,21 @@
 
+resource "kubernetes_cluster_role_binding" "github_actions_admin" {
+  metadata {
+    name = "github-actions-cluster-admin"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
+  }
+
+  subject {
+    kind = "User"
+    name = "arn:aws:sts::792981815698:assumed-role/github_oidc_ci_assume_role/20765437338-1"
+  }
+}
+
 resource "kubernetes_namespace" "terraform-nginx" {
   metadata {
     name = "argocd"
