@@ -21,7 +21,7 @@ resource "aws_subnet" "public_eks_subnet" {
   map_public_ip_on_launch = true
   tags = {
     name = "${var.project_name}-${var.project_id}-public-subnet-${count.index}"
-    retrieval = "test-retrieval"
+    # retrieval = "test-retrieval"
   }
 }
 

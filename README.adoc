@@ -1,0 +1,5 @@
+= brr-base-tf-resources
+
+* https://manski.net/articles/github/actions/cheat-sheet
+* https://medium.com/@ayushishrot/how-to-automate-terraform-deployments-with-github-actions-a-step-by-step-guide-3af1ec203bb5
+*
