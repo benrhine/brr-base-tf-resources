@@ -12,7 +12,7 @@ resource "kubernetes_cluster_role_binding" "github_actions_admin" {
 
   subject {
     kind = "User"
-    name = "arn:aws:sts::792981815698:assumed-role/github_oidc_ci_assume_role/20765437338-1"
+    name = "arn:aws:iam::792981815698:role/github_oidc_ci_assume_role"
   }
 }
 
