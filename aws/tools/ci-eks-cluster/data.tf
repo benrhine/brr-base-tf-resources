@@ -6,6 +6,18 @@ data "aws_vpc" "custom" {
   }
 }
 
+data "aws_subnets" "public" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.custom.id]
+  }
+
+  filter {
+    name   = "tag:retrieval"
+    values = ["test-retrieval-public"]
+  }
+}
+
 data "aws_subnets" "private" {
   filter {
     name   = "vpc-id"
@@ -14,6 +26,6 @@ data "aws_subnets" "private" {
 
   filter {
     name   = "tag:retrieval"
-    values = ["test-retrieval"]
+    values = ["test-retrieval-private"]
   }
 }
