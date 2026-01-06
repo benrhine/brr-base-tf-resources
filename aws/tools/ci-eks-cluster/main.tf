@@ -104,7 +104,7 @@ resource "aws_eks_cluster" "eks_cluster" {
   }
 
   # Enable modern authentication mode
-  identity {
+  access_config {
     authentication_mode = "API_AND_CONFIG_MAP"
   }
 
