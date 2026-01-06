@@ -1,4 +1,4 @@
-name: Terraform Destroy Kubernetes ( TOOLS Account )
+name: Terraform Destroy Kubernetes Nginx ( TOOLS Account )
 on:
   workflow_dispatch:
     inputs:
@@ -47,13 +47,13 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        working-directory: aws/tools/ci-kubernetes
+        working-directory: aws/tools/ci-kube-nginx
         run: terraform init
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/ci-kubernetes
+        working-directory: aws/tools/ci-kube-nginx
         run: terraform plan -destroy
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/ci-kubernetes
+        working-directory: aws/tools/ci-kube-nginx
         run: terraform destroy -auto-approve
