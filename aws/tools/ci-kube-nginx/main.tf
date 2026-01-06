@@ -12,20 +12,20 @@ resource "kubernetes_cluster_role_binding" "github_actions_admin" {
 
   subject {
     kind = "User"
-    name = "arn:aws:iam::792981815698:role/github_oidc_ci_assume_role"
+    name = local.github_oidc_arn
   }
 }
 
 resource "kubernetes_namespace" "terraform-nginx" {
   metadata {
-    name = "argocd"
+    name = "nginx"
   }
 }
 
 
 resource "kubernetes_deployment" "nginx" {
   metadata {
-    name      = "argocd"
+    name      = "nginx"
     namespace = kubernetes_namespace.terraform-nginx.metadata[0].name
   }
 
