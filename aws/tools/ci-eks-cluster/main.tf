@@ -102,7 +102,11 @@ resource "aws_eks_cluster" "eks_cluster" {
     subnet_ids = local.private_subnet_ids
     security_group_ids = [aws_security_group.eks_cluster_sg.id]
   }
-  depends_on = [aws_iam_role_policy_attachment.eks_policy]
+
+  # Enable modern authentication mode
+  identity {
+    authentication_mode = "API_AND_CONFIG_MAP"
+  }
 
   lifecycle {
     precondition {
@@ -110,6 +114,8 @@ resource "aws_eks_cluster" "eks_cluster" {
       error_message = "EKS requires at least two subnets in different AZs"
     }
   }
+
+  depends_on = [aws_iam_role_policy_attachment.eks_policy]
 }
 
 resource "aws_eks_node_group" "eks_node_group" {

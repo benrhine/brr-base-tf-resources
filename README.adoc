@@ -1,5 +1,15 @@
 = brr-base-tf-resources
 
+my local role arn
+
+ * arn:aws:sts::792981815698:assumed-role/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b/brrAwsIdentity
+
 * https://manski.net/articles/github/actions/cheat-sheet
 * https://medium.com/@ayushishrot/how-to-automate-terraform-deployments-with-github-actions-a-step-by-step-guide-3af1ec203bb5
 *
+
+aws eks create-access-entry \
+--cluster-name my-eks-cluster-example-1-xNRn9CZU \
+--principal-arn arn:aws:iam::792981815698:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b \
+--type STANDARD \
+--region us-east-2
