@@ -10,7 +10,7 @@ terraform {
   required_version = "~> 1.14.3"
 
   backend "s3" {
-    bucket                  = "tf-state-w9mdifvw"
+    bucket                  = "tf-state-xi7egjwf"
     key                     = "ci-kube-nginx/terraform.tfstate"
     region                  = "us-east-2"
     encrypt                 = true

@@ -49,3 +49,16 @@ aws eks create-access-entry \
 }
 ]
 }
+
+{
+"Version": "2012-10-17",
+"Statement": [
+{
+"Effect": "Allow",
+"Action": [
+"eks:*"
+],
+"Resource": "*"
+}
+]
+}
