@@ -41,10 +41,10 @@ data "aws_subnets" "private" {
 }
 
 
-data "aws_eks_cluster" "eks_cluster" {
-  name = "my-eks-cluster-example-1-nz6xwZuN"
-}
-
-data "aws_eks_cluster_auth" "eks_cluster" {
-  name = "my-eks-cluster-example-1-nz6xwZuN"
-}
+# data "aws_eks_cluster" "eks_cluster" {
+#   name = "my-eks-cluster-example-1-nz6xwZuN"
+# }
+#
+# data "aws_eks_cluster_auth" "eks_cluster" {
+#   name = "my-eks-cluster-example-1-nz6xwZuN"
+# }
