@@ -1,20 +1,37 @@
 
-resource "kubernetes_cluster_role_binding" "github_actions_admin" {
+# resource "kubernetes_cluster_role_binding" "github_actions_admin" {
+#   metadata {
+#     name = "github-actions-cluster-admin"
+#   }
+#
+#   role_ref {
+#     api_group = "rbac.authorization.k8s.io"
+#     kind      = "ClusterRole"
+#     name      = "cluster-admin"
+#   }
+#
+#   subject {
+#     kind = "User"
+#     name = local.github_oidc_arn
+#   }
+# }
+
+resource "kubernetes_config_map" "aws_auth" {
   metadata {
-    name = "github-actions-cluster-admin"
+    name      = "aws-auth"
+    namespace = "kube-system"
   }
 
-  role_ref {
-    api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = "cluster-admin"
-  }
-
-  subject {
-    kind = "User"
-    name = local.github_oidc_arn
+  data = {
+    mapRoles = <<EOT
+- rolearn: arn:aws:iam::792981815698:role/github_oidc_ci_assume_role
+  username: github
+  groups:
+    - system:masters
+EOT
   }
 }
+
 
 resource "kubernetes_namespace" "terraform-nginx" {
   metadata {
