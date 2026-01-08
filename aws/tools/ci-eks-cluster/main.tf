@@ -95,56 +95,141 @@ locals {
 }
 
 #EKS Cluster and Node Group deployment
-resource "aws_eks_cluster" "eks_cluster" {
-  name     = "my-eks-cluster-example-1-${random_string.suffix.result}"
-  role_arn = aws_iam_role.eks_role.arn
-  vpc_config {
-    subnet_ids = local.private_subnet_ids
-    security_group_ids = [aws_security_group.eks_cluster_sg.id]
+# resource "aws_eks_cluster" "eks_cluster" {
+#   name     = "my-eks-cluster-example-1-${random_string.suffix.result}"
+#   role_arn = aws_iam_role.eks_role.arn
+#   vpc_config {
+#     subnet_ids = local.private_subnet_ids
+#     security_group_ids = [aws_security_group.eks_cluster_sg.id]
+#   }
+#
+#   # Enable modern authentication mode
+#   access_config {
+#     authentication_mode = "API_AND_CONFIG_MAP"
+#   }
+#
+#   lifecycle {
+#     precondition {
+#       condition     = length(local.private_subnet_ids) >= 2
+#       error_message = "EKS requires at least two subnets in different AZs"
+#     }
+#   }
+#
+#   depends_on = [aws_iam_role_policy_attachment.eks_policy]
+# }
+#
+# resource "aws_eks_node_group" "eks_node_group" {
+#   cluster_name    = aws_eks_cluster.eks_cluster.name
+#   node_group_name = "my-node-group-example-1-${random_string.suffix.result}"
+#   node_role_arn   = aws_iam_role.eks_node_group_role.arn
+#   subnet_ids      = local.private_subnet_ids
+#   scaling_config {
+#     desired_size = 1
+#     max_size     = 2
+#     min_size     = 1
+#   }
+#
+#   instance_types = ["t3.small"]
+#   remote_access {
+#     ec2_ssh_key = "brr-test"  # Replace with your key pair name
+#   }
+#
+#   update_config {
+#     max_unavailable = 1
+#   }
+#
+#   depends_on = [
+#     aws_iam_role_policy_attachment.eks_node_group_policy,
+#     aws_iam_role_policy_attachment.eks_cni_policy,
+#     aws_iam_role_policy_attachment.eks_ecr_policy
+#   ]
+#
+# }
+
+//------
+#####################################################################################
+# Uses module to instantiate EKS
+#####################################################################################
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 21.11"
+
+  cluster_name    = "example-2-${random_string.suffix.result}"
+  cluster_version = "1.34"
+
+  iam_role_arn = aws_iam_role.eks_role.arn
+
+  # Optional
+  cluster_endpoint_public_access = true
+
+  # Optional: Adds the current caller identity as an administrator via cluster access entry
+  enable_cluster_creator_admin_permissions = true
+
+  cluster_addons = {
+    coredns                = {}
+    eks-pod-identity-agent = {}
+    kube-proxy             = {}
+    vpc-cni                = {}
   }
 
-  # Enable modern authentication mode
-  access_config {
-    authentication_mode = "API_AND_CONFIG_MAP"
-  }
+  vpc_id     = data.aws_vpc.custom.id
+  subnet_ids = local.private_subnet_ids
 
-  lifecycle {
-    precondition {
-      condition     = length(local.private_subnet_ids) >= 2
-      error_message = "EKS requires at least two subnets in different AZs"
+  eks_managed_node_groups = {
+    example = {
+      instance_types = ["t3.small"]
+      min_size       = 1
+      max_size       = 2
+      desired_size   = 1
     }
   }
 
-  depends_on = [aws_iam_role_policy_attachment.eks_policy]
+  # Cluster access entry
+  # To add the current caller identity as an administrator
+  enable_cluster_creator_admin_permissions = true
+
+
+  access_entries = {
+    # One access entry with a policy associated
+    example = {
+      kubernetes_groups = []
+      principal_arn     = aws_iam_role.eks_role.arn
+
+      policy_associations = {
+        example = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
+          access_scope = {
+            namespaces = ["default"]
+            type       = "namespace"
+          }
+        }
+      }
+    }
+  }
+
+  tags = {
+    environment = "dev"
+    terraform   = "true"
+  }
 }
 
-resource "aws_eks_node_group" "eks_node_group" {
-  cluster_name    = aws_eks_cluster.eks_cluster.name
-  node_group_name = "my-node-group-example-1-${random_string.suffix.result}"
-  node_role_arn   = aws_iam_role.eks_node_group_role.arn
-  subnet_ids      = local.private_subnet_ids
-  scaling_config {
-    desired_size = 1
-    max_size     = 2
-    min_size     = 1
-  }
-
-  instance_types = ["t3.small"]
-  remote_access {
-    ec2_ssh_key = "brr-test"  # Replace with your key pair name
-  }
-
-  update_config {
-    max_unavailable = 1
-  }
-
+data "aws_eks_cluster" "eks_cluster" {
   depends_on = [
-    aws_iam_role_policy_attachment.eks_node_group_policy,
-    aws_iam_role_policy_attachment.eks_cni_policy,
-    aws_iam_role_policy_attachment.eks_ecr_policy
+    module.eks
   ]
-
+  # name = aws_eks_cluster.eks_cluster.name
+  name = module.eks.cluster_name
 }
+
+data "aws_eks_cluster_auth" "eks_cluster" {
+  depends_on = [
+    module.eks
+  ]
+  # name = aws_eks_cluster.eks_cluster.name
+  name = module.eks.cluster_name
+}
+
+//-----
 
 resource "kubernetes_namespace" "terraform-nginx" {
   metadata {
