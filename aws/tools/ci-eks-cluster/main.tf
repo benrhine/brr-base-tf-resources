@@ -154,18 +154,18 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.11"
 
-  cluster_name    = "example-2-${random_string.suffix.result}"
-  cluster_version = "1.34"
+  name    = "example-2-${random_string.suffix.result}"
+  kubernetes_version = "1.34"
 
   iam_role_arn = aws_iam_role.eks_role.arn
 
   # Optional
-  cluster_endpoint_public_access = true
+  endpoint_public_access = true
 
   # Optional: Adds the current caller identity as an administrator via cluster access entry
   enable_cluster_creator_admin_permissions = true
 
-  cluster_addons = {
+  addons = {
     coredns                = {}
     eks-pod-identity-agent = {}
     kube-proxy             = {}

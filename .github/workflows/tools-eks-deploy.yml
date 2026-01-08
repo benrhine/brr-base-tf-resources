@@ -57,10 +57,10 @@ jobs:
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
         run: terraform plan
 
-      - name: Plan terraform Changes
-        working-directory: aws/tools/ci-eks-cluster
-        env:
-          TF_VAR_environment: ${{ github.event.inputs.environment }}
-          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-        run: terraform apply -auto-approve
+#      - name: Plan terraform Changes
+#        working-directory: aws/tools/ci-eks-cluster
+#        env:
+#          TF_VAR_environment: ${{ github.event.inputs.environment }}
+#          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+#          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+#        run: terraform apply -auto-approve
