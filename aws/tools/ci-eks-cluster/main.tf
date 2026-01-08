@@ -184,11 +184,6 @@ module "eks" {
     }
   }
 
-  # Cluster access entry
-  # To add the current caller identity as an administrator
-  enable_cluster_creator_admin_permissions = true
-
-
   access_entries = {
     # One access entry with a policy associated
     example = {
