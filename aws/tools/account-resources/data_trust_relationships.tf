@@ -49,3 +49,17 @@ data "aws_iam_policy_document" "github_oidc_ci_assume_role" {
 #     "token.actions.githubusercontent.com:sub": "repo:johncolmdoyle/holycitypaddle-code:*"
 #   },
 # }
+
+
+data "aws_iam_policy_document" "admin_assume_role" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole"
+    ]
+    principals {
+      identifiers = ["arn:aws:iam::792981815698:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"]
+      type        = "AWS"
+    }
+  }
+}

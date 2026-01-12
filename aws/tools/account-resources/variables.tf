@@ -60,7 +60,7 @@ variable "current_env" {
 variable "git_role_duration" {
   description = "Duration that role is available"
   type        = number
-  default     = 900
+  default     = 1800
 }
 
 variable "git_aws_region" {
@@ -129,6 +129,12 @@ variable "iam_role_name" {
   description = "Name of the role being created"
   type        = string
   default     = "github_oidc_ci_assume_role"
+}
+
+variable "iam_role_name_2" {
+  description = "Name of the role being created"
+  type        = string
+  default     = "admin_assume_role"
 }
 
 variable "tag_environment" {
