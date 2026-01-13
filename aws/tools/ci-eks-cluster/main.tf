@@ -182,6 +182,7 @@ module "eks" {
       max_size       = 2
       desired_size   = 1
       subnet_ids      = local.private_subnet_ids
+      vpc_security_group_ids = [aws_security_group.eks_cluster_sg.id]
       iam_role_arn = aws_iam_role.eks_node_group_role.arn
       # remote_access = {
       #   ec2_ssh_key = "brr-test"  # Replace with your key pair name
