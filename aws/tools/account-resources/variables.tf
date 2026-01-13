@@ -60,7 +60,7 @@ variable "current_env" {
 variable "git_role_duration" {
   description = "Duration that role is available"
   type        = number
-  default     = 1800
+  default     = 3600
 }
 
 variable "git_aws_region" {
