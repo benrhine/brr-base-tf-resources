@@ -183,9 +183,9 @@ module "eks" {
       desired_size   = 1
       subnet_ids      = local.private_subnet_ids
       iam_role_arn = aws_iam_role.eks_node_group_role.arn
-      remote_access = {
-        ec2_ssh_key = "brr-test"  # Replace with your key pair name
-      }
+      # remote_access = {
+      #   ec2_ssh_key = "brr-test"  # Replace with your key pair name
+      # }
     }
   }
 
