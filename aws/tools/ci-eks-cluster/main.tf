@@ -154,47 +154,67 @@ resource "aws_eks_node_group" "eks_node_group" {
 # Attempt 1 Addition: Added based on ChatGPT
 #####################################################################################
 # Define your SSO roles that need cluster admin access
-locals {
-  sso_roles = [
-    {
-      rolearn  = "arn:aws:iam::792981815698:role/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"
-      username = "brrAwsIdentity"
-    },
-    # Add more SSO roles here as needed
-    # {
-    #   rolearn  = "arn:aws:iam::<account-id>:role/AWSReservedSSO_AnotherRole"
-    #   username = "anotherUser"
-    # }
-  ]
+# locals {
+#   sso_roles = [
+#     {
+#       rolearn  = "arn:aws:iam::792981815698:role/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"
+#       username = "brrAwsIdentity"
+#     },
+#     # Add more SSO roles here as needed
+#     # {
+#     #   rolearn  = "arn:aws:iam::<account-id>:role/AWSReservedSSO_AnotherRole"
+#     #   username = "anotherUser"
+#     # }
+#   ]
+#
+#   # Base cluster admin role
+#   base_roles = [
+#     {
+#       rolearn  = "arn:aws:iam::792981815698:role/eks-cluster-admin-role"
+#       username = "admin"
+#     }
+#   ]
+#
+#   all_roles = concat(local.base_roles, local.sso_roles)
+# }
+#
+# resource "kubernetes_config_map" "aws_auth" {
+#   metadata {
+#     name      = "aws-auth"
+#     namespace = "kube-system"
+#   }
+#
+#   data = {
+#     mapRoles = join("\n", [
+#       for role in local.all_roles : <<EOF
+# - rolearn: ${role.rolearn}
+#   username: ${role.username}
+#   groups:
+#     - system:masters
+# EOF
+#     ])
+#   }
+# }
 
-  # Base cluster admin role
-  base_roles = [
-    {
-      rolearn  = "arn:aws:iam::792981815698:role/eks-cluster-admin-role"
-      username = "admin"
-    }
-  ]
-
-  all_roles = concat(local.base_roles, local.sso_roles)
-}
-
-resource "kubernetes_config_map" "aws_auth" {
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = join("\n", [
-      for role in local.all_roles : <<EOF
-- rolearn: ${role.rolearn}
-  username: ${role.username}
-  groups:
-    - system:masters
-EOF
-    ])
-  }
-}
+## Results in this error
+# aws_eks_node_group.eks_node_group: Creation complete after 2m48s [id=my-eks-cluster-example-1-wqmscPLJ:my-node-group-example-1-wqmscPLJ]
+# ╷
+# │ Warning: Deprecated Resource
+# │
+# │   with kubernetes_config_map.aws_auth,
+# │   on main.tf line 181, in resource "kubernetes_config_map" "aws_auth":
+# │  181: resource "kubernetes_config_map" "aws_auth" {
+# │
+# │ Deprecated; use kubernetes_config_map_v1.
+# │
+# │ (and 2 more similar warnings elsewhere)
+# ╵
+# ╷
+# │ Error: Unauthorized
+# │
+# │   with kubernetes_config_map.aws_auth,
+# │   on main.tf line 181, in resource "kubernetes_config_map" "aws_auth":
+# │  181: resource "kubernetes_config_map" "aws_auth" {
 
 #####################################################################################
 # Attempt 2
