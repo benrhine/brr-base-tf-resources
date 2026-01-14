@@ -94,6 +94,10 @@ locals {
   private_subnet_ids = sort(data.aws_subnets.private.ids)
 }
 
+
+#####################################################################################
+# Attempt 1
+#####################################################################################
 #EKS Cluster and Node Group deployment
 resource "aws_eks_cluster" "eks_cluster" {
   name     = "my-eks-cluster-example-1-${random_string.suffix.result}"
@@ -146,9 +150,54 @@ resource "aws_eks_node_group" "eks_node_group" {
 
 }
 
-//------
 #####################################################################################
-# Uses module to instantiate EKS
+# Attempt 1 Addition: Added based on ChatGPT
+#####################################################################################
+# Define your SSO roles that need cluster admin access
+locals {
+  sso_roles = [
+    {
+      rolearn  = "arn:aws:iam::792981815698:role/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"
+      username = "brrAwsIdentity"
+    },
+    # Add more SSO roles here as needed
+    # {
+    #   rolearn  = "arn:aws:iam::<account-id>:role/AWSReservedSSO_AnotherRole"
+    #   username = "anotherUser"
+    # }
+  ]
+
+  # Base cluster admin role
+  base_roles = [
+    {
+      rolearn  = "arn:aws:iam::792981815698:role/eks-cluster-admin-role"
+      username = "admin"
+    }
+  ]
+
+  all_roles = concat(local.base_roles, local.sso_roles)
+}
+
+resource "kubernetes_config_map" "aws_auth" {
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = join("\n", [
+      for role in local.all_roles : <<EOF
+- rolearn: ${role.rolearn}
+  username: ${role.username}
+  groups:
+    - system:masters
+EOF
+    ])
+  }
+}
+
+#####################################################################################
+# Attempt 2
 #####################################################################################
 # module "eks" {
 #   source  = "terraform-aws-modules/eks/aws"
@@ -232,48 +281,7 @@ data "aws_eks_cluster_auth" "eks_cluster" {
   # name = module.eks.cluster_name
 }
 
-# Define your SSO roles that need cluster admin access
-locals {
-  sso_roles = [
-    {
-      rolearn  = "arn:aws:iam::792981815698:role/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"
-      username = "brrAwsIdentity"
-    },
-    # Add more SSO roles here as needed
-    # {
-    #   rolearn  = "arn:aws:iam::<account-id>:role/AWSReservedSSO_AnotherRole"
-    #   username = "anotherUser"
-    # }
-  ]
 
-  # Base cluster admin role
-  base_roles = [
-    {
-      rolearn  = "arn:aws:iam::792981815698:role/eks-cluster-admin-role"
-      username = "admin"
-    }
-  ]
-
-  all_roles = concat(local.base_roles, local.sso_roles)
-}
-
-resource "kubernetes_config_map" "aws_auth" {
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = join("\n", [
-      for role in local.all_roles : <<EOF
-- rolearn: ${role.rolearn}
-  username: ${role.username}
-  groups:
-    - system:masters
-EOF
-    ])
-  }
-}
 
 //-----
 
