@@ -16,21 +16,21 @@
 #   }
 # }
 
-resource "kubernetes_config_map" "aws_auth" {
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = <<EOT
-- rolearn: arn:aws:iam::792981815698:role/github_oidc_ci_assume_role
-  username: github
-  groups:
-    - system:masters
-EOT
-  }
-}
+# resource "kubernetes_config_map" "aws_auth" {
+#   metadata {
+#     name      = "aws-auth"
+#     namespace = "kube-system"
+#   }
+#
+#   data = {
+#     mapRoles = <<EOT
+# - rolearn: arn:aws:iam::792981815698:role/github_oidc_ci_assume_role
+#   username: github
+#   groups:
+#     - system:masters
+# EOT
+#   }
+# }
 
 
 resource "kubernetes_namespace" "terraform-nginx" {
