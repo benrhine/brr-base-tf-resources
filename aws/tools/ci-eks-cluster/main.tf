@@ -176,6 +176,7 @@ resource "aws_eks_node_group" "eks_node_group" {
 
 #####################################################################################
 # Attempt 1 Addition: Added based on ChatGPT
+# https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest?tab=inputs
 #####################################################################################
 # Define your SSO roles that need cluster admin access
 # locals {
