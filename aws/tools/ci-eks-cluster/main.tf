@@ -146,6 +146,23 @@ resource "aws_eks_access_policy_association" "eks_access_policy" {
   depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
 
+resource "aws_eks_access_entry" "example_2" {
+  cluster_name      = aws_eks_cluster.eks_cluster.name
+  principal_arn     = "arn:aws:iam::792981815698:role/github_oidc_ci_assume_role"
+  type              = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "eks_access_policy" {
+  cluster_name  = aws_eks_cluster.eks_cluster.name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = "arn:aws:iam::792981815698:role/github_oidc_ci_assume_role"
+
+  access_scope {
+    type       = "cluster"
+  }
+  depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
+}
+
 resource "aws_eks_node_group" "eks_node_group" {
   cluster_name    = aws_eks_cluster.eks_cluster.name
   node_group_name = "my-node-group-example-1-${random_string.suffix.result}"
