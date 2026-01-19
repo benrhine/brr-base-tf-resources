@@ -121,6 +121,15 @@ resource "github_actions_secret" "env_secret_3" {
   plaintext_value = var.git_aws_region
 }
 
+## "arn:aws:sts::792981815698:assumed-role/github_oidc_ci_assume_role/21009592007-1
+
+# aws eks associate-access-policy \
+# --cluster-name my-eks-cluster-example-1-xpmJzaaq \
+# --principal-arn arn:aws:iam::792981815698:role/eks-role \
+# --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy \
+# --access-scope type=cluster
+
+
 ########################################################################################################################
 # Store role for CI Actions in Aws: This is to ensure role is accessible for future actions
 ########################################################################################################################

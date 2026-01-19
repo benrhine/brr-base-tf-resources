@@ -48,6 +48,13 @@ resource "aws_iam_role" "eks_role" {
         Principal = {
           Service = "eks.amazonaws.com"
         }
+      },
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::792981815698:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"
+        }
       }
     ]
   })
@@ -56,6 +63,16 @@ resource "aws_iam_role" "eks_role" {
 resource "aws_iam_role_policy_attachment" "eks_policy" {
   role       = aws_iam_role.eks_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}
+
+resource "aws_eks_access_policy_association" "eks_access_policy" {
+  cluster_name  = aws_eks_cluster.eks_cluster.name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolic"
+  principal_arn = aws_iam_role.eks_role.name
+
+  access_scope {
+    type       = "cluster"
+  }
 }
 
 resource "aws_iam_role" "eks_node_group_role" {
@@ -154,47 +171,47 @@ resource "aws_eks_node_group" "eks_node_group" {
 # Attempt 1 Addition: Added based on ChatGPT
 #####################################################################################
 # Define your SSO roles that need cluster admin access
-locals {
-  sso_roles = [
-    {
-      rolearn  = "arn:aws:iam::792981815698:role/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"
-      username = "brrAwsIdentity"
-    },
-    # Add more SSO roles here as needed
-    # {
-    #   rolearn  = "arn:aws:iam::<account-id>:role/AWSReservedSSO_AnotherRole"
-    #   username = "anotherUser"
-    # }
-  ]
-
-  # Base cluster admin role
-  base_roles = [
-    {
-      rolearn  = "arn:aws:iam::792981815698:role/eks-cluster-admin-role"
-      username = "admin"
-    }
-  ]
-
-  all_roles = concat(local.base_roles, local.sso_roles)
-}
-
-resource "kubernetes_config_map" "aws_auth" {
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = join("\n", [
-      for role in local.all_roles : <<EOF
-- rolearn: ${role.rolearn}
-  username: ${role.username}
-  groups:
-    - system:masters
-EOF
-    ])
-  }
-}
+# locals {
+#   sso_roles = [
+#     {
+#       rolearn  = "arn:aws:iam::792981815698:role/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"
+#       username = "brrAwsIdentity"
+#     },
+#     # Add more SSO roles here as needed
+#     # {
+#     #   rolearn  = "arn:aws:iam::<account-id>:role/AWSReservedSSO_AnotherRole"
+#     #   username = "anotherUser"
+#     # }
+#   ]
+#
+#   # Base cluster admin role
+#   base_roles = [
+#     {
+#       rolearn  = "arn:aws:iam::792981815698:role/eks-cluster-admin-role"
+#       username = "admin"
+#     }
+#   ]
+#
+#   all_roles = concat(local.base_roles, local.sso_roles)
+# }
+#
+# resource "kubernetes_config_map" "aws_auth" {
+#   metadata {
+#     name      = "aws-auth"
+#     namespace = "kube-system"
+#   }
+#
+#   data = {
+#     mapRoles = join("\n", [
+#       for role in local.all_roles : <<EOF
+# - rolearn: ${role.rolearn}
+#   username: ${role.username}
+#   groups:
+#     - system:masters
+# EOF
+#     ])
+#   }
+# }
 
 ## Results in this error
 # aws_eks_node_group.eks_node_group: Creation complete after 2m48s [id=my-eks-cluster-example-1-wqmscPLJ:my-node-group-example-1-wqmscPLJ]
