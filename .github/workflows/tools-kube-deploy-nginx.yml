@@ -36,7 +36,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v5.0.0
         with:
           aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
-          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
+          role-to-assume: arn:aws:iam::792981815698:role/eks-role #${{ secrets.DEV_ROLE }}                 # REQUIRED
           role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
 
