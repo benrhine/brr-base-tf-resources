@@ -73,6 +73,7 @@ resource "aws_eks_access_policy_association" "eks_access_policy" {
   access_scope {
     type       = "cluster"
   }
+  depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
 
 resource "aws_iam_role" "eks_node_group_role" {
