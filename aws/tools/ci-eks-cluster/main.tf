@@ -152,7 +152,7 @@ resource "aws_eks_access_entry" "example_2" {
   type              = "STANDARD"
 }
 
-resource "aws_eks_access_policy_association" "eks_access_policy" {
+resource "aws_eks_access_policy_association" "eks_access_policy_2" {
   cluster_name  = aws_eks_cluster.eks_cluster.name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn = "arn:aws:iam::792981815698:role/github_oidc_ci_assume_role"
