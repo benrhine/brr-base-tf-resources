@@ -65,17 +65,6 @@ resource "aws_iam_role_policy_attachment" "eks_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-resource "aws_eks_access_policy_association" "eks_access_policy" {
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = aws_iam_role.eks_role.arn
-
-  access_scope {
-    type       = "cluster"
-  }
-  depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
-}
-
 resource "aws_iam_role" "eks_node_group_role" {
   name = "eks-node-group-role"
   assume_role_policy = jsonencode({
@@ -138,6 +127,23 @@ resource "aws_eks_cluster" "eks_cluster" {
   }
 
   depends_on = [aws_iam_role_policy_attachment.eks_policy]
+}
+
+resource "aws_eks_access_entry" "example" {
+  cluster_name      = aws_eks_cluster.eks_cluster.name
+  principal_arn     = aws_iam_role.eks_role.arn
+  type              = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "eks_access_policy" {
+  cluster_name  = aws_eks_cluster.eks_cluster.name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = aws_iam_role.eks_role.arn
+
+  access_scope {
+    type       = "cluster"
+  }
+  depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
 
 resource "aws_eks_node_group" "eks_node_group" {
