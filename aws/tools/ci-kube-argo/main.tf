@@ -100,6 +100,8 @@ resource "helm_release" "argocd" {
 
   create_namespace = true
 
+  skip_crds = true
+
   set = [
     {
       name  = "server.service.type"

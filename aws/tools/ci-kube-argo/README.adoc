@@ -13,3 +13,37 @@
 ** import vpc
 * https://terrateam.io/blog/deploy-argocd-terraform-kubernetes
 * https://spacelift.io/blog/argocd-terraform
+
+
+If you see the following error ...
+
+----
+│ Error: installation failed
+│
+│   with helm_release.argocd,
+│   on main.tf line 92, in resource "helm_release" "argocd":
+│   92: resource "helm_release" "argocd" {
+│
+│ Unable to continue with install: CustomResourceDefinition
+│ "applications.argoproj.io" in namespace "" exists and cannot be imported
+│ into the current release: invalid ownership metadata; label validation
+│ error: missing key "app.kubernetes.io/managed-by": must be set to "Helm";
+│ annotation validation error: missing key "meta.helm.sh/release-name": must
+│ be set to "argocd"; annotation validation error: missing key
+│ "meta.helm.sh/release-namespace": must be set to "argocd"
+╵
+Error: Terraform exited with code 1.
+Error: Process completed with exit code 1.
+----
+
+Then run the following 2 commands
+
+----
+kubectl delete crd applications.argoproj.io
+kubectl delete crd appprojects.argoproj.io
+----
+
+This happens because argo was already installed at some point and EKS remembers it
+
+However this does not seem to be enough to fix the issue
+
