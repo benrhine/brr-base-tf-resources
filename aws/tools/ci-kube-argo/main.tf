@@ -5,11 +5,13 @@ resource "kubernetes_namespace" "terraform_argocd" {
   }
 }
 
-
-resource "kubernetes_deployment" "argocd" {
+resource "kubernetes_deployment" "argocd_server" {
   metadata {
-    name      = "argocd"
+    name      = "argocd-server"
     namespace = kubernetes_namespace.terraform_argocd.metadata[0].name
+    labels = {
+      app = "argocd-server"
+    }
   }
 
   spec {
@@ -17,28 +19,32 @@ resource "kubernetes_deployment" "argocd" {
 
     selector {
       match_labels = {
-        app = "argocd"
+        app = "argocd-server"
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "argocd"
+          app = "argocd-server"
         }
       }
 
       spec {
         container {
-          name  = "argocd"
-          image = "argoproj/argocd:v2.9.12" # latest stable version, adjust if needed
+          name  = "argocd-server"
+          image = "quay.io/argoproj/argocd:v2.9.3"
+
+          args = [
+            "argocd-server",
+            "--insecure"
+          ]
 
           port {
             container_port = 8080
           }
 
-          # Optional: expose health checks
-          liveness_probe {
+          readiness_probe {
             http_get {
               path = "/healthz"
               port = 8080
@@ -47,13 +53,13 @@ resource "kubernetes_deployment" "argocd" {
             period_seconds        = 10
           }
 
-          readiness_probe {
+          liveness_probe {
             http_get {
               path = "/healthz"
               port = 8080
             }
-            initial_delay_seconds = 5
-            period_seconds        = 5
+            initial_delay_seconds = 30
+            period_seconds        = 20
           }
         }
       }
@@ -61,20 +67,22 @@ resource "kubernetes_deployment" "argocd" {
   }
 }
 
-resource "kubernetes_service" "argocd" {
+
+resource "kubernetes_service" "argocd_server" {
   metadata {
-    name      = "argocd"
+    name      = "argocd-server"
     namespace = kubernetes_namespace.terraform_argocd.metadata[0].name
   }
 
   spec {
     selector = {
-      app = kubernetes_deployment.argocd.spec[0].template[0].metadata[0].labels.app
+      app = "argocd-server"
     }
 
     port {
+      name        = "http"
       port        = 80
-      target_port = 80
+      target_port = 8080
     }
 
     type = "LoadBalancer"
