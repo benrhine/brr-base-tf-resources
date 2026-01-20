@@ -68,23 +68,23 @@ resource "kubernetes_deployment" "argocd_server" {
 }
 
 
-resource "kubernetes_service" "argocd_server" {
-  metadata {
-    name      = "argocd-server"
-    namespace = kubernetes_namespace.terraform_argocd.metadata[0].name
-  }
-
-  spec {
-    selector = {
-      app = "argocd-server"
-    }
-
-    port {
-      name        = "http"
-      port        = 80
-      target_port = 8080
-    }
-
-    type = "LoadBalancer"
-  }
-}
+# resource "kubernetes_service" "argocd_server" {
+#   metadata {
+#     name      = "argocd-server"
+#     namespace = kubernetes_namespace.terraform_argocd.metadata[0].name
+#   }
+#
+#   spec {
+#     selector = {
+#       app = "argocd-server"
+#     }
+#
+#     port {
+#       name        = "http"
+#       port        = 80
+#       target_port = 8080
+#     }
+#
+#     type = "LoadBalancer"
+#   }
+# }
