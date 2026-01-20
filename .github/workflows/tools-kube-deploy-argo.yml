@@ -15,11 +15,24 @@ on:
       project-name:
         description: "Custom Name"
         required: false
-        default: "ci_vpc"
+        default: "ci_kube_argo"
       project-id:
         description: "Custom Id"
         required: false
         default: "001"
+      kubernetes_namespace:
+        description: "Namespace that will be created and deployed to"
+        required: false
+        default: argocd
+      kubernetes_deploy_type:
+        description: "How do you want to deploy ArgoCD?"
+        required: false
+        type: choice
+        options:
+          - kubernetes
+          - helm
+        default: helm
+
 
 permissions:
   actions: write
