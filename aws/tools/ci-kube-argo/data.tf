@@ -4,11 +4,11 @@ data "aws_availability_zones" "available" {}
 
 
 data "aws_eks_cluster" "eks_cluster" {
-  name = "my-eks-cluster-example-1-lZnlDXgh"
+  name = "my-eks-cluster-example-1-lZnIDXgh"
 }
 
 data "aws_eks_cluster_auth" "eks_cluster" {
-  name = "my-eks-cluster-example-1-lZnlDXgh"
+  name = "my-eks-cluster-example-1-lZnIDXgh"
 }
 
 data "terraform_remote_state" "eks" {
