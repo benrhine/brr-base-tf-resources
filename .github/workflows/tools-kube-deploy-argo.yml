@@ -77,3 +77,8 @@ jobs:
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
         run: terraform apply -auto-approve
+
+      - name: Show Output
+        working-directory: aws/tools/ci-kube-argo
+        run: terraform output -json
+
