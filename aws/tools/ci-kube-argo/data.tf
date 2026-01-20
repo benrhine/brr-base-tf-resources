@@ -20,3 +20,21 @@ data "terraform_remote_state" "eks" {
     region = "us-east-2"
   }
 }
+
+data "kubernetes_secret" "argocd_admin" {
+  metadata {
+    name      = "argocd-initial-admin-secret"
+    namespace = "argocd"
+  }
+
+  depends_on = [helm_release.argocd]
+}
+
+data "kubernetes_service" "argocd_server" {
+  metadata {
+    name      = "argocd-server"
+    namespace = "argocd"
+  }
+
+  depends_on = [helm_release.argocd]
+}
