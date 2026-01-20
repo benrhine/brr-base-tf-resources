@@ -100,7 +100,7 @@ resource "helm_release" "argocd" {
 
   create_namespace = true
 
-  skip_crds = true
+  # skip_crds = true
 
   set = [
     {
@@ -110,6 +110,10 @@ resource "helm_release" "argocd" {
     {
       name  = "server.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-type"
       value = "nlb"
+    },
+    {
+      name  = "applicationset.enabled"
+      value = "false"
     }
   ]
 }
