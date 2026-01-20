@@ -10,3 +10,13 @@ data "aws_eks_cluster" "eks_cluster" {
 data "aws_eks_cluster_auth" "eks_cluster" {
   name = "my-eks-cluster-example-1-P8PcW3eK"
 }
+
+data "terraform_remote_state" "eks" {
+  backend = "s3"
+
+  config = {
+    bucket = "tf-state-xi7egjwf"
+    key    = "ci-eks-cluster/terraform.tfstate"
+    region = "us-east-2"
+  }
+}
