@@ -2,7 +2,7 @@
 
 output "argocd_initial_admin_password" {
   value = data.kubernetes_secret.argocd_admin.data["password"]
-  sensitive = true
+  sensitive = false
 }
 
 # output "argocd_initial_admin_password" {
