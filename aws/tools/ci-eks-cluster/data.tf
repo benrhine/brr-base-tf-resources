@@ -41,10 +41,22 @@ data "aws_subnets" "private" {
 }
 
 
-# data "aws_eks_cluster" "eks_cluster" {
-#   name = "my-eks-cluster-example-1-nz6xwZuN"
-# }
-#
-# data "aws_eks_cluster_auth" "eks_cluster" {
-#   name = "my-eks-cluster-example-1-nz6xwZuN"
-# }
+data "aws_iam_policy_document" "eks_all_permissions" {
+  statement {
+    actions   = [
+      "eks:*"
+    ]
+    resources = ["*"]
+    effect = "Allow"
+  }
+}
+
+// find iam role
+
+data "aws_iam_role" "sso" {
+  name = "AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"
+}
+
+data "aws_iam_role" "ci" {
+  name = "github_oidc_ci_assume_role"
+}

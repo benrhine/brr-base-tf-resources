@@ -65,6 +65,23 @@ resource "aws_iam_role_policy_attachment" "eks_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
+// Create custom policy to assign to role
+resource "aws_iam_policy" "policy" {
+  name        = "test-policy"
+  description = "A test policy"
+  policy      = data.aws_iam_policy_document.eks_all_permissions.json
+}
+
+// Assign custom policy to role
+resource "aws_iam_role_policy_attachment" "eks_custom_policy" {
+  role       = aws_iam_role.eks_role.name
+  policy_arn = aws_iam_policy.policy.arn
+}
+// Without the above policy attached running the following ...
+// aws --profile eks-role eks --region us-east-2 update-kubeconfig --name my-eks-cluster-example-1-trNUw3H4
+// will fail with the following
+# An error occurred (AccessDeniedException) when calling the DescribeCluster operation: User: arn:aws:sts::792981815698:assumed-role/eks-role/botocore-session-1768872094 is not authorized to perform: eks:DescribeCluster on resource: arn:aws:eks:us-east-2:792981815698:cluster/my-eks-cluster-example-1-trNUw3H4 because no identity-based policy allows the eks:DescribeCluster action
+
 resource "aws_iam_role" "eks_node_group_role" {
   name = "eks-node-group-role"
   assume_role_policy = jsonencode({
@@ -129,13 +146,13 @@ resource "aws_eks_cluster" "eks_cluster" {
   depends_on = [aws_iam_role_policy_attachment.eks_policy]
 }
 
-resource "aws_eks_access_entry" "example" {
+resource "aws_eks_access_entry" "eks_role_access" {
   cluster_name      = aws_eks_cluster.eks_cluster.name
   principal_arn     = aws_iam_role.eks_role.arn
   type              = "STANDARD"
 }
 
-resource "aws_eks_access_policy_association" "eks_access_policy" {
+resource "aws_eks_access_policy_association" "eks_role_access_policy" {
   cluster_name  = aws_eks_cluster.eks_cluster.name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn = aws_iam_role.eks_role.arn
@@ -146,16 +163,33 @@ resource "aws_eks_access_policy_association" "eks_access_policy" {
   depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
 
-resource "aws_eks_access_entry" "example_2" {
+resource "aws_eks_access_entry" "oidc_role_access" {
   cluster_name      = aws_eks_cluster.eks_cluster.name
   principal_arn     = "arn:aws:iam::792981815698:role/github_oidc_ci_assume_role"
   type              = "STANDARD"
 }
 
-resource "aws_eks_access_policy_association" "eks_access_policy_2" {
+resource "aws_eks_access_policy_association" "oidc_role_access_policy" {
   cluster_name  = aws_eks_cluster.eks_cluster.name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn = "arn:aws:iam::792981815698:role/github_oidc_ci_assume_role"
+
+  access_scope {
+    type       = "cluster"
+  }
+  depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
+}
+
+resource "aws_eks_access_entry" "sso_role_access" {
+  cluster_name      = aws_eks_cluster.eks_cluster.name
+  principal_arn     = data.aws_iam_role.sso.arn
+  type              = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "sso_role_access_policy" {
+  cluster_name  = aws_eks_cluster.eks_cluster.name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = data.aws_iam_role.sso.arn
 
   access_scope {
     type       = "cluster"

@@ -1,15 +1,15 @@
 
-resource "kubernetes_namespace" "argocd" {
+resource "kubernetes_namespace" "terraform_argocd" {
   metadata {
     name = "argocd"
   }
 }
 
 
-resource "kubernetes_deployment" "argocd_server" {
+resource "kubernetes_deployment" "argocd" {
   metadata {
-    name      = "argocd-server"
-    namespace = kubernetes_namespace.argocd.metadata[0].name
+    name      = "argocd"
+    namespace = kubernetes_namespace.terraform_argocd.metadata[0].name
   }
 
   spec {
@@ -17,20 +17,20 @@ resource "kubernetes_deployment" "argocd_server" {
 
     selector {
       match_labels = {
-        app = "argocd-server"
+        app = "argocd"
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "argocd-server"
+          app = "argocd"
         }
       }
 
       spec {
         container {
-          name  = "argocd-server"
+          name  = "argocd"
           image = "argoproj/argocd:v2.9.12" # latest stable version, adjust if needed
 
           port {
@@ -61,15 +61,15 @@ resource "kubernetes_deployment" "argocd_server" {
   }
 }
 
-resource "kubernetes_service" "argocd_server" {
+resource "kubernetes_service" "argocd" {
   metadata {
-    name      = "argocd-server"
-    namespace = kubernetes_namespace.argocd.metadata[0].name
+    name      = "argocd"
+    namespace = kubernetes_namespace.terraform_argocd.metadata[0].name
   }
 
   spec {
     selector = {
-      app = kubernetes_deployment.argocd_server.spec[0].template[0].metadata[0].labels.app
+      app = kubernetes_deployment.argocd.spec[0].template[0].metadata[0].labels.app
     }
 
     port {
