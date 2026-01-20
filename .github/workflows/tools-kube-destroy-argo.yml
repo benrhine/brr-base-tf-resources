@@ -54,6 +54,10 @@ jobs:
         working-directory: aws/tools/ci-kube-argo
         run: terraform plan -destroy
 
-      - name: Plan terraform Changes
+      - name: Remove HELM issue
+        working-directory: aws/tools/ci-kube-argo
+        run: terraform state rm helm_release.argocd
+
+      - name: Apply terraform Changes
         working-directory: aws/tools/ci-kube-argo
         run: terraform destroy -auto-approve
