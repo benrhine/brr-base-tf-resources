@@ -62,3 +62,12 @@ aws eks create-access-entry \
 }
 ]
 }
+
+== Reference
+
+* https://blog.saintmalik.me/argocd-on-kubernetes-cluster/
+* https://registry.terraform.io/modules/squareops/argocd/kubernetes/latest
+** Module for creation
+* https://dev.to/aws-builders/gitops-with-argocd-on-amazon-eks-using-terraform-a-complete-implementation-guide-1inc
+** interesting as it sets argo up with a custom domain
+*
