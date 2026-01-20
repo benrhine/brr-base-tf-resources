@@ -1,11 +1,20 @@
 
 
+# output "argocd_initial_admin_password" {
+#   value = base64decode(
+#     data.kubernetes_secret.argocd_admin.data["password"]
+#   )
+#   sensitive = true
+# }
+
 output "argocd_initial_admin_password" {
-  value = base64decode(
-    data.kubernetes_secret.argocd_admin.data["password"]
+  value = try(
+    base64decode(data.kubernetes_secret.argocd_admin.data["password"]),
+    null
   )
   sensitive = true
 }
+
 
 output "argocd_server_address" {
   value = (
