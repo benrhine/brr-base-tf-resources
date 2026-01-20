@@ -33,8 +33,7 @@ data "kubernetes_secret" "argocd_admin" {
 data "kubernetes_service" "argocd_server" {
   metadata {
     name      = "argocd-server"
-    namespace = "argocd"
+    namespace = helm_release.argocd.namespace
   }
-
   depends_on = [helm_release.argocd]
 }
