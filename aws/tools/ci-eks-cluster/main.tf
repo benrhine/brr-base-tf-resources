@@ -23,7 +23,7 @@ resource "aws_security_group" "eks_cluster_sg" {
   tags = {
     environment     = var.environment
     terraform       = "true"
-    cluster_name    = aws_eks_cluster.eks_cluster.name
+    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
     name            = "${local.resource_prefix}-eks-cluster-sg-${var.project_postfix}"
   }
 }
@@ -49,7 +49,7 @@ resource "aws_security_group" "eks_node_sg" {
   tags = {
     environment     = var.environment
     terraform       = "true"
-    cluster_name    = aws_eks_cluster.eks_cluster.name
+    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
     name            = "${local.resource_prefix}-eks-node-sg-${var.project_postfix}"
   }
 }
@@ -81,7 +81,7 @@ resource "aws_iam_role" "eks_role" {
   tags = {
     environment     = var.environment
     terraform       = "true"
-    cluster_name    = aws_eks_cluster.eks_cluster.name
+    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
     name            = "${local.resource_prefix}-eks-role-${var.project_postfix}"
   }
 }
@@ -132,7 +132,7 @@ resource "aws_iam_role" "eks_node_group_role" {
   tags = {
     environment     = var.environment
     terraform       = "true"
-    cluster_name    = aws_eks_cluster.eks_cluster.name
+    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
     name            = "${local.resource_prefix}-eks-ng-role-${var.project_postfix}"
   }
 }
@@ -191,7 +191,7 @@ resource "aws_eks_cluster" "eks_cluster" {
   tags = {
     environment     = var.environment
     terraform       = "true"
-    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
+    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
     name            = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
   }
 }
@@ -228,7 +228,7 @@ resource "aws_eks_node_group" "eks_node_group" {
   tags = {
     environment     = var.environment
     terraform       = "true"
-    cluster_name    = aws_eks_cluster.eks_cluster.name
+    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
     name            = "${local.resource_prefix}-node-group-${var.project_postfix}"
   }
 }
