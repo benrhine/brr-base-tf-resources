@@ -20,28 +20,28 @@ jobs:
 
       # https://github.com/bridgecrewio/checkov-action
       - name: Test account-resources with Checkov
-        id: checkov
+        id: account-resources
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/account-resources
           framework: terraform
 
       - name: Test ci-vpc with Checkov
-        id: checkov
+        id: ci-vpc
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/ci-vpc
           framework: terraform
 
       - name: Test ci-eks-cluster with Checkov
-        id: checkov
+        id: ci-eks-cluster
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/ci-eks-cluster
           framework: terraform
 
       - name: Test ci-kube-argo with Checkov
-        id: checkov
+        id: ci-kube-argo
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/ci-kube-argo
