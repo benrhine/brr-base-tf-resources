@@ -92,46 +92,10 @@ jobs:
         working-directory: aws/tools/ci-eks-cluster
         run: terraform init
 
-      - name: Validate Terraform
-        working-directory: aws/tools/ci-eks-cluster
-        run: terraform validate
-
       - name: Plan terraform Changes
         working-directory: aws/tools/ci-eks-cluster
-        env:
-#          TF_VAR_org_name_abv: ${{}}
-#          TF_VAR_org_name_full: ${{}}
-#          TF_VAR_team_name: ${{}}
-          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-          TF_VAR_project_postfix: ${{ github.event.inputs.project-postfix }}
-          TF_VAR_environment: ${{ github.event.inputs.environment }}
-          TF_VAR_environment_prefix: ${{ github.event.inputs.environment-prefix }}
-          TF_VAR_environment_instance_type: ${{ github.event.inputs.environment-instance-type }}
-          TF_VAR_cluster_auth_mode: ${{ github.event.inputs.cluster-auth-mode }}
-          TF_VAR_cluster_ng_desired_size: ${{ github.event.inputs.cluster-ng-desired-size }}
-          TF_VAR_cluster_ng_max_size: ${{ github.event.inputs.cluster-ng-max-size }}
-          TF_VAR_cluster_ng_min_size: ${{ github.event.inputs.cluster-ng-min-size }}
-          TF_VAR_cluster_ng_max_unavailable: ${{ github.event.inputs.cluster-ng-max-unavailable }}
-          TF_VAR_cluster_ng_remote_access_key: ${{ github.event.inputs.cluster-ng-remote-access-key }}
         run: terraform plan -destroy
 
       - name: Plan terraform Changes
         working-directory: aws/tools/ci-eks-cluster
-        env:
-#          TF_VAR_org_name_abv: ${{}}
-#          TF_VAR_org_name_full: ${{}}
-#          TF_VAR_team_name: ${{}}
-          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-          TF_VAR_project_postfix: ${{ github.event.inputs.project-postfix }}
-          TF_VAR_environment: ${{ github.event.inputs.environment }}
-          TF_VAR_environment_prefix: ${{ github.event.inputs.environment-prefix }}
-          TF_VAR_environment_instance_type: ${{ github.event.inputs.environment-instance-type }}
-          TF_VAR_cluster_auth_mode: ${{ github.event.inputs.cluster-auth-mode }}
-          TF_VAR_cluster_ng_desired_size: ${{ github.event.inputs.cluster-ng-desired-size }}
-          TF_VAR_cluster_ng_max_size: ${{ github.event.inputs.cluster-ng-max-size }}
-          TF_VAR_cluster_ng_min_size: ${{ github.event.inputs.cluster-ng-min-size }}
-          TF_VAR_cluster_ng_max_unavailable: ${{ github.event.inputs.cluster-ng-max-unavailable }}
-          TF_VAR_cluster_ng_remote_access_key: ${{ github.event.inputs.cluster-ng-remote-access-key }}
         run: terraform destroy -auto-approve
