@@ -1,4 +1,6 @@
-
+########################################################################################################################
+# Find previously created VPC
+########################################################################################################################
 data "aws_vpc" "custom" {
   filter {
     name   = "tag:retrieval"
@@ -51,12 +53,26 @@ data "aws_iam_policy_document" "eks_all_permissions" {
   }
 }
 
-// find iam role
+########################################################################################################################
+# Find additional IAM roles that require Kubernetes access
+########################################################################################################################
 
 data "aws_iam_role" "sso" {
-  name = "AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"
+  name = var.requires_cluster_admin_role_001
 }
 
 data "aws_iam_role" "ci" {
-  name = "github_oidc_ci_assume_role"
+  name = var.requires_cluster_admin_role_002
+}
+
+data "aws_eks_cluster" "eks_cluster" {
+  name = aws_eks_cluster.eks_cluster.name
+
+  depends_on = [aws_eks_cluster.eks_cluster]
+}
+
+data "aws_eks_cluster_auth" "eks_cluster" {
+  name = aws_eks_cluster.eks_cluster.name
+
+  depends_on = [aws_eks_cluster.eks_cluster]
 }

@@ -3,6 +3,14 @@ on:
   #  push:
   workflow_dispatch:
     inputs:
+      project-name:
+        description: "Custom Name"
+        required: false
+        default: "ci_vpc"
+      project-id:
+        description: "Custom Id"
+        required: false
+        default: "001"
       environment:
         description: "Target Environment"
         required: false
@@ -12,14 +20,11 @@ on:
           - test
           - staging
           - prod
-      project-name:
-        description: "Custom Name"
-        required: false
-        default: "ci_vpc"
-      project-id:
-        description: "Custom Id"
-        required: false
-        default: "001"
+      environment-prefix:
+        description: "Should resources be prefixed with environment?"
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   actions: write
@@ -52,14 +57,29 @@ jobs:
       - name: Plan terraform Changes
         working-directory: aws/tools/ci-eks-cluster
         env:
-          TF_VAR_environment: ${{ github.event.inputs.environment }}
+#          TF_VAR_org_name_abv: ${{}}
+#          TF_VAR_org_name_full: ${{}}
+#          TF_VAR_team_name: ${{}}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_environment_prefix: ${{}}
+          TF_VAR_environment_instance_type: ${{}}
+          TF_VAR_cluster_auth_mode: ${{}}
+          TF_VAR_cluster_ng_desired_size: ${{}}
+          TF_VAR_cluster_ng_max_size: ${{}}
+          TF_VAR_cluster_ng_min_size: ${{}}
+          TF_VAR_cluster_ng_max_unavailable: ${{}}
+          TF_VAR_cluster_ng_remote_access_key: ${{}}
+          TF_VAR_project_postfix: ${{}}
         run: terraform plan
 
       - name: Apply terraform Changes
         working-directory: aws/tools/ci-eks-cluster
         env:
+#          TF_VAR_org_name_abv: ${{}}
+#          TF_VAR_org_name_full: ${{}}
+#          TF_VAR_team_name: ${{}}
           TF_VAR_environment: ${{ github.event.inputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}

@@ -13,6 +13,18 @@
 ** import vpc
 * https://terrateam.io/blog/deploy-argocd-terraform-kubernetes
 * https://spacelift.io/blog/argocd-terraform
+* https://medium.com/@verajm/how-to-display-checkov-security-findings-in-github-actions-summary-a0db4b4e37a8
+* https://mahira-technology.medium.com/guarding-the-gateway-a-comprehensive-guide-to-securing-argocd-admin-passwords-739581a2de5b
+* https://medium.com/@frunzasamuel/configure-argo-cd-in-a-kubernetes-cluster-with-terraform-c0aa4b9f75db
+* https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_addon
+** need to look at this more
+* https://dev.to/aws-builders/gitops-with-argocd-on-amazon-eks-using-terraform-a-complete-implementation-guide-1inc
+* https://dev.to/aws-builders/managing-aws-eks-access-entries-with-terraform-and-opentofu-414
+* https://www.thecloudpanda.com/blog/kubernetes-argocd-setup-terraform/
+* https://spacelift.io/blog/argocd-terraform
+** I used this one for some of the setup
+* https://terrateam.io/blog/deploy-argocd-terraform-kubernetes
+*
 
 
 If you see the following error ...
@@ -36,14 +48,14 @@ Error: Terraform exited with code 1.
 Error: Process completed with exit code 1.
 ----
 
-Then run the following 2 commands
+Then run the following 3 commands
 
 ----
 kubectl delete crd applications.argoproj.io
 kubectl delete crd appprojects.argoproj.io
+kubectl delete crd applicationsets.argoproj.io
 ----
 
 This happens because argo was already installed at some point and EKS remembers it
 
-However this does not seem to be enough to fix the issue
 

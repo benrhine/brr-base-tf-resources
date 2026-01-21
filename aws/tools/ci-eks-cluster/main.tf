@@ -1,5 +1,17 @@
+########################################################################################################################
+# Should resource names be prefixed with their environment? This is an interesting question around environment design.
+# Do you want a cluster per environment? e.g. dev-cluster, test-cluster ... or do you want something more like a cluster
+# per account where the cluster in the dev account may hold both dev and test deployments, the cluster in non-prod may
+# hold the uat and regression deployments.
+########################################################################################################################
+locals {
+  resource_prefix = var.environment_prefix ? "${var.environment}-${var.project_name}-${var.project_id}" : "${var.project_name}-${var.project_id}"
+}
+########################################################################################################################
+# Create security groups
+########################################################################################################################
 resource "aws_security_group" "eks_cluster_sg" {
-  name        = "my-eks-cluster-eks-cluster-sg"
+  name        = "${local.resource_prefix}-eks-cluster-sg-${var.project_postfix}"
   description = "EKS cluster security group"
   vpc_id      = data.aws_vpc.custom.id
   egress {
@@ -9,12 +21,15 @@ resource "aws_security_group" "eks_cluster_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
-    Name = "my-eks-cluster-eks-cluster-sg-example-1-${random_string.suffix.result}"
+    environment     = var.environment
+    terraform       = "true"
+    cluster_name    = aws_eks_cluster.eks_cluster.name
+    name            = "${local.resource_prefix}-eks-cluster-sg-${var.project_postfix}"
   }
 }
 
 resource "aws_security_group" "eks_node_sg" {
-  name        = "my-eks-cluster-eks-node-sg"
+  name        = "${local.resource_prefix}-eks-node-sg-${var.project_postfix}"
   description = "EKS worker node security group"
   vpc_id      = data.aws_vpc.custom.id
   ingress {
@@ -32,13 +47,18 @@ resource "aws_security_group" "eks_node_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
-    Name = "my-eks-cluster-eks-node-sg-example-1-${random_string.suffix.result}"
+    environment     = var.environment
+    terraform       = "true"
+    cluster_name    = aws_eks_cluster.eks_cluster.name
+    name            = "${local.resource_prefix}-eks-node-sg-${var.project_postfix}"
   }
 }
 
-#IAM Roles/Policies - All of the following are related to IAM Role and Policies
+########################################################################################################################
+# Create additional required? roles
+########################################################################################################################
 resource "aws_iam_role" "eks_role" {
-  name = "eks-role"
+  name = "${local.resource_prefix}-eks-role-${var.project_postfix}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -58,17 +78,27 @@ resource "aws_iam_role" "eks_role" {
       }
     ]
   })
+  tags = {
+    environment     = var.environment
+    terraform       = "true"
+    cluster_name    = aws_eks_cluster.eks_cluster.name
+    name            = "${local.resource_prefix}-eks-role-${var.project_postfix}"
+  }
 }
 
+########################################################################################################################
+# Role attachments These do not require tags as they are attaching pre-existing resources to a resource
+########################################################################################################################
 resource "aws_iam_role_policy_attachment" "eks_policy" {
   role       = aws_iam_role.eks_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
 // Create custom policy to assign to role
+// This is not a production ready policy but grants wide access for ease of testing
 resource "aws_iam_policy" "policy" {
-  name        = "test-policy"
-  description = "A test policy"
+  name        = "eks-all-policy"
+  description = "Provide all permissions for EKS"
   policy      = data.aws_iam_policy_document.eks_all_permissions.json
 }
 
@@ -82,8 +112,11 @@ resource "aws_iam_role_policy_attachment" "eks_custom_policy" {
 // will fail with the following
 # An error occurred (AccessDeniedException) when calling the DescribeCluster operation: User: arn:aws:sts::792981815698:assumed-role/eks-role/botocore-session-1768872094 is not authorized to perform: eks:DescribeCluster on resource: arn:aws:eks:us-east-2:792981815698:cluster/my-eks-cluster-example-1-trNUw3H4 because no identity-based policy allows the eks:DescribeCluster action
 
+########################################################################################################################
+# Create additional required? roles
+########################################################################################################################
 resource "aws_iam_role" "eks_node_group_role" {
-  name = "eks-node-group-role"
+  name = "${local.resource_prefix}-eks-ng-role-${var.project_postfix}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -96,8 +129,17 @@ resource "aws_iam_role" "eks_node_group_role" {
       }
     ]
   })
+  tags = {
+    environment     = var.environment
+    terraform       = "true"
+    cluster_name    = aws_eks_cluster.eks_cluster.name
+    name            = "${local.resource_prefix}-eks-ng-role-${var.project_postfix}"
+  }
 }
 
+########################################################################################################################
+# Role attachments: These do not require tags as they are attaching pre-existing resources to a resource
+########################################################################################################################
 resource "aws_iam_role_policy_attachment" "eks_node_group_policy" {
   role       = aws_iam_role.eks_node_group_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
@@ -113,18 +155,19 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+########################################################################################################################
+# Collect vpc ip's for Eks cluster
+########################################################################################################################
 locals {
   public_subnet_ids  = sort(data.aws_subnets.public.ids)
   private_subnet_ids = sort(data.aws_subnets.private.ids)
 }
 
-
-#####################################################################################
-# Attempt 1
-#####################################################################################
-#EKS Cluster and Node Group deployment
+########################################################################################################################
+# Create Eks cluster
+########################################################################################################################
 resource "aws_eks_cluster" "eks_cluster" {
-  name     = "my-eks-cluster-example-1-${random_string.suffix.result}"
+  name     = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
   role_arn = aws_iam_role.eks_role.arn
   vpc_config {
     subnet_ids = local.private_subnet_ids
@@ -133,7 +176,7 @@ resource "aws_eks_cluster" "eks_cluster" {
 
   # Enable modern authentication mode
   access_config {
-    authentication_mode = "API_AND_CONFIG_MAP"
+    authentication_mode = var.cluster_auth_mode
   }
 
   lifecycle {
@@ -144,18 +187,84 @@ resource "aws_eks_cluster" "eks_cluster" {
   }
 
   depends_on = [aws_iam_role_policy_attachment.eks_policy]
+
+  tags = {
+    environment     = var.environment
+    terraform       = "true"
+    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
+    name            = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
+  }
+}
+
+########################################################################################################################
+# Create Eks Node Group
+########################################################################################################################
+resource "aws_eks_node_group" "eks_node_group" {
+  cluster_name    = aws_eks_cluster.eks_cluster.name
+  node_group_name = "${local.resource_prefix}-node-group-${var.project_postfix}"
+  node_role_arn   = aws_iam_role.eks_node_group_role.arn
+  subnet_ids      = local.private_subnet_ids
+  scaling_config {
+    desired_size = var.cluster_ng_desired_size
+    max_size     = var.cluster_ng_max_size
+    min_size     = var.cluster_ng_min_size
+  }
+
+  instance_types = [var.environment_instance_type]
+  remote_access {
+    ec2_ssh_key = var.cluster_ng_remote_access_key  # Replace with your key pair name
+  }
+
+  update_config {
+    max_unavailable = var.cluster_ng_max_unavailable
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.eks_node_group_policy,
+    aws_iam_role_policy_attachment.eks_cni_policy,
+    aws_iam_role_policy_attachment.eks_ecr_policy
+  ]
+
+  tags = {
+    environment     = var.environment
+    terraform       = "true"
+    cluster_name    = aws_eks_cluster.eks_cluster.name
+    name            = "${local.resource_prefix}-node-group-${var.project_postfix}"
+  }
+}
+
+########################################################################################################################
+# Create cluster access entries
+# This configures the EKS role created as part of this Terraform to be a cluster admin. Additionally, this also configures
+# your SSO user and the OIDC role used for this deployment as cluster administrators.
+########################################################################################################################
+
+# Validate that all roles are available and throw an explicit error if they are not
+locals {
+  eks_role_arn = try(
+    aws_iam_role.eks_role.arn,
+    throw("Required IAM role '${aws_iam_role.eks_role.name}' does not exist")
+  )
+  sso_role_arn = try(
+    data.aws_iam_role.sso.arn,
+    throw("Required IAM role '${var.requires_cluster_admin_role_001}' does not exist")
+  )
+  ci_role_arn = try(
+    data.aws_iam_role.ci.arn,
+    throw("Required IAM role '${var.requires_cluster_admin_role_002}' does not exist")
+  )
 }
 
 resource "aws_eks_access_entry" "eks_role_access" {
   cluster_name      = aws_eks_cluster.eks_cluster.name
-  principal_arn     = aws_iam_role.eks_role.arn
+  principal_arn     = local.eks_role_arn
   type              = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "eks_role_access_policy" {
   cluster_name  = aws_eks_cluster.eks_cluster.name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = aws_iam_role.eks_role.arn
+  principal_arn = local.eks_role_arn
 
   access_scope {
     type       = "cluster"
@@ -165,14 +274,14 @@ resource "aws_eks_access_policy_association" "eks_role_access_policy" {
 
 resource "aws_eks_access_entry" "oidc_role_access" {
   cluster_name      = aws_eks_cluster.eks_cluster.name
-  principal_arn     = "arn:aws:iam::792981815698:role/github_oidc_ci_assume_role"
+  principal_arn     = local.ci_role_arn
   type              = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "oidc_role_access_policy" {
   cluster_name  = aws_eks_cluster.eks_cluster.name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = "arn:aws:iam::792981815698:role/github_oidc_ci_assume_role"
+  principal_arn = local.ci_role_arn
 
   access_scope {
     type       = "cluster"
@@ -182,14 +291,14 @@ resource "aws_eks_access_policy_association" "oidc_role_access_policy" {
 
 resource "aws_eks_access_entry" "sso_role_access" {
   cluster_name      = aws_eks_cluster.eks_cluster.name
-  principal_arn     = data.aws_iam_role.sso.arn
+  principal_arn     = local.sso_role_arn
   type              = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "sso_role_access_policy" {
   cluster_name  = aws_eks_cluster.eks_cluster.name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = data.aws_iam_role.sso.arn
+  principal_arn = local.sso_role_arn
 
   access_scope {
     type       = "cluster"
@@ -197,100 +306,6 @@ resource "aws_eks_access_policy_association" "sso_role_access_policy" {
   depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
 
-resource "aws_eks_node_group" "eks_node_group" {
-  cluster_name    = aws_eks_cluster.eks_cluster.name
-  node_group_name = "my-node-group-example-1-${random_string.suffix.result}"
-  node_role_arn   = aws_iam_role.eks_node_group_role.arn
-  subnet_ids      = local.private_subnet_ids
-  scaling_config {
-    desired_size = 1
-    max_size     = 2
-    min_size     = 1
-  }
-
-  instance_types = ["t3.small"]
-  remote_access {
-    ec2_ssh_key = "brr-test"  # Replace with your key pair name
-  }
-
-  update_config {
-    max_unavailable = 1
-  }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.eks_node_group_policy,
-    aws_iam_role_policy_attachment.eks_cni_policy,
-    aws_iam_role_policy_attachment.eks_ecr_policy
-  ]
-
-}
-
-#####################################################################################
-# Attempt 1 Addition: Added based on ChatGPT
-# https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest?tab=inputs
-#####################################################################################
-# Define your SSO roles that need cluster admin access
-# locals {
-#   sso_roles = [
-#     {
-#       rolearn  = "arn:aws:iam::792981815698:role/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b"
-#       username = "brrAwsIdentity"
-#     },
-#     # Add more SSO roles here as needed
-#     # {
-#     #   rolearn  = "arn:aws:iam::<account-id>:role/AWSReservedSSO_AnotherRole"
-#     #   username = "anotherUser"
-#     # }
-#   ]
-#
-#   # Base cluster admin role
-#   base_roles = [
-#     {
-#       rolearn  = "arn:aws:iam::792981815698:role/eks-cluster-admin-role"
-#       username = "admin"
-#     }
-#   ]
-#
-#   all_roles = concat(local.base_roles, local.sso_roles)
-# }
-#
-# resource "kubernetes_config_map" "aws_auth" {
-#   metadata {
-#     name      = "aws-auth"
-#     namespace = "kube-system"
-#   }
-#
-#   data = {
-#     mapRoles = join("\n", [
-#       for role in local.all_roles : <<EOF
-# - rolearn: ${role.rolearn}
-#   username: ${role.username}
-#   groups:
-#     - system:masters
-# EOF
-#     ])
-#   }
-# }
-
-## Results in this error
-# aws_eks_node_group.eks_node_group: Creation complete after 2m48s [id=my-eks-cluster-example-1-wqmscPLJ:my-node-group-example-1-wqmscPLJ]
-# ╷
-# │ Warning: Deprecated Resource
-# │
-# │   with kubernetes_config_map.aws_auth,
-# │   on main.tf line 181, in resource "kubernetes_config_map" "aws_auth":
-# │  181: resource "kubernetes_config_map" "aws_auth" {
-# │
-# │ Deprecated; use kubernetes_config_map_v1.
-# │
-# │ (and 2 more similar warnings elsewhere)
-# ╵
-# ╷
-# │ Error: Unauthorized
-# │
-# │   with kubernetes_config_map.aws_auth,
-# │   on main.tf line 181, in resource "kubernetes_config_map" "aws_auth":
-# │  181: resource "kubernetes_config_map" "aws_auth" {
 
 #####################################################################################
 # Attempt 2
@@ -359,87 +374,4 @@ resource "aws_eks_node_group" "eks_node_group" {
 #   }
 # }
 
-data "aws_eks_cluster" "eks_cluster" {
-  depends_on = [
-    aws_eks_cluster.eks_cluster
-    # module.eks
-  ]
-  name = aws_eks_cluster.eks_cluster.name
-  # name = module.eks.cluster_name
-}
 
-data "aws_eks_cluster_auth" "eks_cluster" {
-  depends_on = [
-    aws_eks_cluster.eks_cluster
-    # module.eks
-  ]
-  name = aws_eks_cluster.eks_cluster.name
-  # name = module.eks.cluster_name
-}
-
-
-
-//-----
-
-# resource "kubernetes_namespace" "terraform-nginx" {
-#   metadata {
-#     name = "nginx"
-#   }
-# }
-#
-#
-# resource "kubernetes_deployment" "nginx" {
-#   metadata {
-#     name      = "nginx"
-#     namespace = kubernetes_namespace.terraform-nginx.metadata[0].name
-#   }
-#
-#   spec {
-#     replicas = 1
-#
-#     selector {
-#       match_labels = {
-#         app = "nginx"
-#       }
-#     }
-#
-#     template {
-#       metadata {
-#         labels = {
-#           app = "nginx"
-#         }
-#       }
-#
-#       spec {
-#         container {
-#           name  = "nginx"
-#           image = "nginx:1.21.6"
-#
-#           port {
-#             container_port = 80
-#           }
-#         }
-#       }
-#     }
-#   }
-# }
-#
-# resource "kubernetes_service" "nginx" {
-#   metadata {
-#     name      = "nginx"
-#     namespace = kubernetes_namespace.terraform-nginx.metadata[0].name
-#   }
-#
-#   spec {
-#     selector = {
-#       app = kubernetes_deployment.nginx.spec[0].template[0].metadata[0].labels.app
-#     }
-#
-#     port {
-#       port        = 80
-#       target_port = 80
-#     }
-#
-#     type = "LoadBalancer"
-#   }
-# }
