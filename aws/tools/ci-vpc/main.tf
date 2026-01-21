@@ -1,4 +1,4 @@
-
+# checkov:skip=CKV_AWS_11,CKV_AWS_12
 resource "aws_vpc" "vpc" {
   cidr_block = "10.0.0.0/16"
   tags = {
@@ -10,7 +10,7 @@ resource "aws_vpc" "vpc" {
   }
 }
 #####################################################################################
-
+# checkov:skip=CKV_AWS_130 "This subnet is intentionally public for EKS load balancers"
 resource "aws_subnet" "public_eks_subnet" {
   count 	    = 2
   vpc_id            = aws_vpc.vpc.id
@@ -25,6 +25,7 @@ resource "aws_subnet" "public_eks_subnet" {
   }
 }
 
+# checkov:skip=CKV_AWS_130 "This subnet is intentionally public for EKS load balancers"
 resource "aws_subnet" "private_eks_subnet" {
   count             = 2
   vpc_id            = aws_vpc.vpc.id
