@@ -21,6 +21,7 @@ locals {
   convert_to_underscores = replace(var.git_repo_name, "-", "_")
 }
 
+# checkov:skip=CKV_TF_1 "Using pinned module, ignore false positive"
 module "s3_tf_state_bucket" {
   source                        = "git::https://github.com/benrhine/brr-s3-module.git?ref=v0.0.1.7"                                          # Where to find the module
   ######################################################################################################################
@@ -53,6 +54,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 # Create an IAM role to be assumed by GitHub Action
+# checkov:skip=CKV_TF_1 "Using pinned module, ignore false positive"
 module "github_oidc_ci_assume_role" {
   source = "git::https://github.com/benrhine/brr-iam-roles-module.git?ref=v0.0.1.1" # Where to find the module
   ######################################################################################################################   # Value passed in via variables.tf
@@ -75,6 +77,7 @@ resource "aws_iam_role_policy_attachment" "github_oidc_ci_assume_role_attachment
   ]
 }
 
+# checkov:skip=CKV_TF_1 "Using pinned module, ignore false positive"
 module "admin_assume_role" {
   source = "git::https://github.com/benrhine/brr-iam-roles-module.git?ref=v0.0.1.1" # Where to find the module
   ######################################################################################################################   # Value passed in via variables.tf
@@ -133,6 +136,7 @@ resource "github_actions_secret" "env_secret_3" {
 ########################################################################################################################
 # Store role for CI Actions in Aws: This is to ensure role is accessible for future actions
 ########################################################################################################################
+# checkov:skip=CKV_TF_1 "Using pinned module, ignore false positive"
 module "ci_role_to_assume" {
   source = "git::https://github.com/benrhine/brr-ssm-module.git?ref=v0.0.1.1" # Where to find the module
   ######################################################################################################################
