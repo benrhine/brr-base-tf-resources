@@ -1,11 +1,12 @@
 
-name: Checkov
+name: Check TF with Checkov
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
 jobs:
-  build:
+  checkov:
 
     runs-on: ubuntu-latest
     steps:
@@ -18,9 +19,30 @@ jobs:
           python-version: 3.9
 
       # https://github.com/bridgecrewio/checkov-action
-      - name: Test with Checkov
+      - name: Test account-resources with Checkov
         id: checkov
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/account-resources
+          framework: terraform
+
+      - name: Test ci-vpc with Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/ci-vpc
+          framework: terraform
+
+      - name: Test ci-eks-cluster with Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/ci-eks-cluster
+          framework: terraform
+
+      - name: Test ci-kube-argo with Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/ci-kube-argo
           framework: terraform
