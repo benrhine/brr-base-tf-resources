@@ -1,0 +1,25 @@
+
+name: Checkov
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v6.1.0
+        with:
+          python-version: 3.9
+
+      - name: Test with Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: aws/tools/account-resources
+          framework: terraform
