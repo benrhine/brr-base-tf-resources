@@ -1,0 +1,8 @@
+= CI: Eks cluster with auto mode
+
+This is supposed to be much simpler to setup and is the suggested starting place for greenfield work. This also supposedly integrates the latest auth EKS Pod Identity instead of IRSA
+
+== Reference
+
+* https://dev.to/mechcloud_academy/eks-standard-vs-eks-auto-mode-the-evolutionary-leap-in-kubernetes-operations-287g
+* https://medium.com/@matias.martinez90/things-to-consider-before-using-eks-auto-mode-84bc6fc0c6f3

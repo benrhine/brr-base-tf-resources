@@ -11,46 +11,52 @@ locals {
 # Create security groups
 ########################################################################################################################
 resource "aws_security_group" "eks_cluster_sg" {
-  name        = "${local.resource_prefix}-eks-cluster-sg-${var.project_postfix}"
-  description = "EKS cluster security group"
-  vpc_id      = data.aws_vpc.custom.id
+  name                    = "${local.resource_prefix}-eks-cluster-sg-${var.project_postfix}"
+  description             = "EKS cluster security group"
+  vpc_id                  = data.aws_vpc.custom.id
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port             = 0
+    to_port               = 0
+    protocol              = "-1"
+    cidr_blocks           = ["0.0.0.0/0"]
   }
   tags = {
-    environment     = var.environment
-    terraform       = "true"
-    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
-    name            = "${local.resource_prefix}-eks-cluster-sg-${var.project_postfix}"
+    name                  = "${local.resource_prefix}-eks-cluster-sg-${var.project_postfix}"
+    environment           = var.environment
+    terraform             = "true"
+    org                   = var.org_name_abv
+    team                  = var.team_name
+    create_date           = timestamp()
+    cluster_name          = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
   }
 }
 
 resource "aws_security_group" "eks_node_sg" {
-  name        = "${local.resource_prefix}-eks-node-sg-${var.project_postfix}"
-  description = "EKS worker node security group"
-  vpc_id      = data.aws_vpc.custom.id
+  name                    = "${local.resource_prefix}-eks-node-sg-${var.project_postfix}"
+  description             = "EKS worker node security group"
+  vpc_id                  = data.aws_vpc.custom.id
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port             = 0
+    to_port               = 0
+    protocol              = "-1"
     security_groups = [
       aws_security_group.eks_cluster_sg.id
     ]
   }
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port             = 0
+    to_port               = 0
+    protocol              = "-1"
+    cidr_blocks           = ["0.0.0.0/0"]
   }
   tags = {
-    environment     = var.environment
-    terraform       = "true"
-    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
-    name            = "${local.resource_prefix}-eks-node-sg-${var.project_postfix}"
+    environment           = var.environment
+    terraform             = "true"
+    org                   = var.org_name_abv
+    team                  = var.team_name
+    create_date           = timestamp()
+    cluster_name          = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
+    name                  = "${local.resource_prefix}-eks-node-sg-${var.project_postfix}"
   }
 }
 
@@ -58,8 +64,8 @@ resource "aws_security_group" "eks_node_sg" {
 # Create additional required? roles
 ########################################################################################################################
 resource "aws_iam_role" "eks_role" {
-  name = "${local.resource_prefix}-eks-role-${var.project_postfix}"
-  assume_role_policy = jsonencode({
+  name                    = "${local.resource_prefix}-eks-role-${var.project_postfix}"
+  assume_role_policy      = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -79,10 +85,13 @@ resource "aws_iam_role" "eks_role" {
     ]
   })
   tags = {
-    environment     = var.environment
-    terraform       = "true"
-    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
-    name            = "${local.resource_prefix}-eks-role-${var.project_postfix}"
+    environment           = var.environment
+    terraform             = "true"
+    org                   = var.org_name_abv
+    team                  = var.team_name
+    create_date           = timestamp()
+    cluster_name          = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
+    name                  = "${local.resource_prefix}-eks-role-${var.project_postfix}"
   }
 }
 
@@ -90,22 +99,22 @@ resource "aws_iam_role" "eks_role" {
 # Role attachments These do not require tags as they are attaching pre-existing resources to a resource
 ########################################################################################################################
 resource "aws_iam_role_policy_attachment" "eks_policy" {
-  role       = aws_iam_role.eks_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+  role                    = aws_iam_role.eks_role.name
+  policy_arn              = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
 // Create custom policy to assign to role
 // This is not a production ready policy but grants wide access for ease of testing
 resource "aws_iam_policy" "policy" {
-  name        = "eks-all-policy"
-  description = "Provide all permissions for EKS"
-  policy      = data.aws_iam_policy_document.eks_all_permissions.json
+  name                    = "eks-all-policy"
+  description             = "Provide all permissions for EKS"
+  policy                  = data.aws_iam_policy_document.eks_all_permissions.json
 }
 
 // Assign custom policy to role
 resource "aws_iam_role_policy_attachment" "eks_custom_policy" {
-  role       = aws_iam_role.eks_role.name
-  policy_arn = aws_iam_policy.policy.arn
+  role                    = aws_iam_role.eks_role.name
+  policy_arn              = aws_iam_policy.policy.arn
 }
 // Without the above policy attached running the following ...
 // aws --profile eks-role eks --region us-east-2 update-kubeconfig --name my-eks-cluster-example-1-trNUw3H4
@@ -116,8 +125,8 @@ resource "aws_iam_role_policy_attachment" "eks_custom_policy" {
 # Create additional required? roles
 ########################################################################################################################
 resource "aws_iam_role" "eks_node_group_role" {
-  name = "${local.resource_prefix}-eks-ng-role-${var.project_postfix}"
-  assume_role_policy = jsonencode({
+  name                    = "${local.resource_prefix}-eks-ng-role-${var.project_postfix}"
+  assume_role_policy      = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -130,10 +139,13 @@ resource "aws_iam_role" "eks_node_group_role" {
     ]
   })
   tags = {
-    environment     = var.environment
-    terraform       = "true"
-    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
-    name            = "${local.resource_prefix}-eks-ng-role-${var.project_postfix}"
+    environment           = var.environment
+    terraform             = "true"
+    org                   = var.org_name_abv
+    team                  = var.team_name
+    create_date           = timestamp()
+    cluster_name          = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
+    name                  = "${local.resource_prefix}-eks-ng-role-${var.project_postfix}"
   }
 }
 
@@ -141,58 +153,63 @@ resource "aws_iam_role" "eks_node_group_role" {
 # Role attachments: These do not require tags as they are attaching pre-existing resources to a resource
 ########################################################################################################################
 resource "aws_iam_role_policy_attachment" "eks_node_group_policy" {
-  role       = aws_iam_role.eks_node_group_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+  role                    = aws_iam_role.eks_node_group_role.name
+  policy_arn              = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
-  role       = aws_iam_role.eks_node_group_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role                    = aws_iam_role.eks_node_group_role.name
+  policy_arn              = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 
 resource "aws_iam_role_policy_attachment" "eks_ecr_policy" {
-  role       = aws_iam_role.eks_node_group_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role                    = aws_iam_role.eks_node_group_role.name
+  policy_arn              = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
 ########################################################################################################################
 # Collect vpc ip's for Eks cluster
 ########################################################################################################################
 locals {
-  public_subnet_ids  = sort(data.aws_subnets.public.ids)
-  private_subnet_ids = sort(data.aws_subnets.private.ids)
+  public_subnet_ids       = sort(data.aws_subnets.public.ids)
+  private_subnet_ids      = sort(data.aws_subnets.private.ids)
 }
 
 ########################################################################################################################
 # Create Eks cluster
 ########################################################################################################################
 resource "aws_eks_cluster" "eks_cluster" {
-  name     = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
-  role_arn = aws_iam_role.eks_role.arn
+  name                    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
+  role_arn                = aws_iam_role.eks_role.arn
   vpc_config {
-    subnet_ids = local.private_subnet_ids
-    security_group_ids = [aws_security_group.eks_cluster_sg.id]
+    subnet_ids            = local.private_subnet_ids
+    security_group_ids    = [aws_security_group.eks_cluster_sg.id]
   }
 
   # Enable modern authentication mode
   access_config {
-    authentication_mode = var.cluster_auth_mode
+    authentication_mode   = var.cluster_auth_mode
   }
 
   lifecycle {
     precondition {
-      condition     = length(local.private_subnet_ids) >= 2
-      error_message = "EKS requires at least two subnets in different AZs"
+      condition           = length(local.private_subnet_ids) >= 2
+      error_message       = "EKS requires at least two subnets in different AZs"
     }
   }
 
-  depends_on = [aws_iam_role_policy_attachment.eks_policy]
+  depends_on = [
+    aws_iam_role_policy_attachment.eks_policy
+  ]
 
   tags = {
-    environment     = var.environment
-    terraform       = "true"
-    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
-    name            = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
+    environment           = var.environment
+    terraform             = "true"
+    org                   = var.org_name_abv
+    team                  = var.team_name
+    create_date           = timestamp()
+    cluster_name          = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
+    name                  = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
   }
 }
 
@@ -200,23 +217,24 @@ resource "aws_eks_cluster" "eks_cluster" {
 # Create Eks Node Group
 ########################################################################################################################
 resource "aws_eks_node_group" "eks_node_group" {
-  cluster_name    = aws_eks_cluster.eks_cluster.name
-  node_group_name = "${local.resource_prefix}-node-group-${var.project_postfix}"
-  node_role_arn   = aws_iam_role.eks_node_group_role.arn
-  subnet_ids      = local.private_subnet_ids
+  cluster_name            = aws_eks_cluster.eks_cluster.name
+  node_group_name         = "${local.resource_prefix}-node-group-${var.project_postfix}"
+  node_role_arn           = aws_iam_role.eks_node_group_role.arn
+  subnet_ids              = local.private_subnet_ids
   scaling_config {
-    desired_size = var.cluster_ng_desired_size
-    max_size     = var.cluster_ng_max_size
-    min_size     = var.cluster_ng_min_size
+    desired_size          = var.cluster_ng_desired_size
+    max_size              = var.cluster_ng_max_size
+    min_size              = var.cluster_ng_min_size
   }
 
-  instance_types = [var.environment_instance_type]
+  instance_types          = [var.environment_instance_type]
+
   remote_access {
-    ec2_ssh_key = var.cluster_ng_remote_access_key  # Replace with your key pair name
+    ec2_ssh_key           = var.cluster_ng_remote_access_key  # Replace with your key pair name
   }
 
   update_config {
-    max_unavailable = var.cluster_ng_max_unavailable
+    max_unavailable       = var.cluster_ng_max_unavailable
   }
 
   depends_on = [
@@ -226,10 +244,13 @@ resource "aws_eks_node_group" "eks_node_group" {
   ]
 
   tags = {
-    environment     = var.environment
-    terraform       = "true"
-    cluster_name    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
-    name            = "${local.resource_prefix}-node-group-${var.project_postfix}"
+    environment           = var.environment
+    terraform             = "true"
+    org                   = var.org_name_abv
+    team                  = var.team_name
+    create_date           = timestamp()
+    cluster_name          = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
+    name                  = "${local.resource_prefix}-node-group-${var.project_postfix}"
   }
 }
 
@@ -256,52 +277,52 @@ locals {
 }
 
 resource "aws_eks_access_entry" "eks_role_access" {
-  cluster_name      = aws_eks_cluster.eks_cluster.name
-  principal_arn     = local.eks_role_arn
-  type              = "STANDARD"
+  cluster_name            = aws_eks_cluster.eks_cluster.name
+  principal_arn           = local.eks_role_arn
+  type                    = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "eks_role_access_policy" {
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = local.eks_role_arn
+  cluster_name            = aws_eks_cluster.eks_cluster.name
+  policy_arn              = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn           = local.eks_role_arn
 
   access_scope {
-    type       = "cluster"
+    type                  = "cluster"
   }
   depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
 
 resource "aws_eks_access_entry" "oidc_role_access" {
-  cluster_name      = aws_eks_cluster.eks_cluster.name
-  principal_arn     = local.ci_role_arn
-  type              = "STANDARD"
+  cluster_name            = aws_eks_cluster.eks_cluster.name
+  principal_arn           = local.ci_role_arn
+  type                    = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "oidc_role_access_policy" {
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = local.ci_role_arn
+  cluster_name            = aws_eks_cluster.eks_cluster.name
+  policy_arn              = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn           = local.ci_role_arn
 
   access_scope {
-    type       = "cluster"
+    type                  = "cluster"
   }
   depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
 
 resource "aws_eks_access_entry" "sso_role_access" {
-  cluster_name      = aws_eks_cluster.eks_cluster.name
-  principal_arn     = local.sso_role_arn
-  type              = "STANDARD"
+  cluster_name            = aws_eks_cluster.eks_cluster.name
+  principal_arn           = local.sso_role_arn
+  type                    = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "sso_role_access_policy" {
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = local.sso_role_arn
+  cluster_name            = aws_eks_cluster.eks_cluster.name
+  policy_arn              = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn           = local.sso_role_arn
 
   access_scope {
-    type       = "cluster"
+    type                  = "cluster"
   }
   depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
