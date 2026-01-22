@@ -22,7 +22,6 @@ resource "aws_vpc" "vpc" {
     retrieval             = "test-retrieval"
   }
 }
-#####################################################################################
 
 # checkov:skip=CKV_AWS_130 "This subnet is intentionally public for EKS load balancers"
 resource "aws_subnet" "public_eks_subnet" {
@@ -95,7 +94,6 @@ resource "aws_route_table" "public" {
     create_date           = timestamp()
   }
 }
-#####################################################################################
 
 resource "aws_route_table" "private" {
   count                   = 2
