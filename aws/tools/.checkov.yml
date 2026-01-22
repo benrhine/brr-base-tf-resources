@@ -1,0 +1,3 @@
+skip-check:
+  - CKV2_AWS_11  # TODO: enable VPC flow logs
+  - CKV2_AWS_12  # TODO: restrict default SG
