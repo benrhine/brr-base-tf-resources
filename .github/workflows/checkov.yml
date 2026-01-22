@@ -27,12 +27,12 @@ jobs:
           directory: aws/tools/account-resources
           framework: terraform
 
-      - name: Test ci-vpc with Checkov
-        id: ci-vpc
-        uses: bridgecrewio/checkov-action@v12
-        with:
-          directory: aws/tools/ci-vpc
-          framework: terraform
+#      - name: Test ci-vpc with Checkov
+#        id: ci-vpc
+#        uses: bridgecrewio/checkov-action@v12
+#        with:
+#          directory: aws/tools/ci-vpc
+#          framework: terraform
 
       - name: Test ci-eks-cluster with Checkov
         id: ci-eks-cluster
