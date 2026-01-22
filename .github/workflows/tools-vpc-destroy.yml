@@ -1,5 +1,8 @@
-name: Terraform Destroy VPC ( TOOLS Account )
+name: Tools Destroy VPC
 on:
+  # https://medium.com/@thibautdonis1998/automating-your-workflows-on-a-schedule-github-actions-cron-fd7e662083c6
+  schedule:
+    - cron: '0 16 * * *'
   workflow_dispatch:
     inputs:
       project-name:
