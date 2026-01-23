@@ -31,6 +31,7 @@ jobs:
         run: |
           echo "project=account-resources" > result.txt
           echo "status=${{ job.status }}" >> result.txt
+          echo "status=${{ job.status }}"
 
       - name: Upload result artifact
         if: always()
@@ -59,6 +60,22 @@ jobs:
           output: sarif
           output-file-path: results/ci-vpc
 
+      - name: Record job result
+        if: always()
+        run: |
+          echo "project=ci-vpc" > result.txt
+          echo "status=${{ job.status }}" >> result.txt
+          echo "status=${{ job.status }}"
+
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: checkov-ci-vpc
+          path: |
+            results/ci-vpc.sarif
+            result.txt
+
   checkov-ci-eks-cluster:
     name: Run Checkov - (Project CI Eks Cluster)
     runs-on: ubuntu-latest
@@ -78,6 +95,22 @@ jobs:
           output-file-path: results/ci-eks-cluster
     #          config_file: tf-static-analysis-checkov-matrix.yml
 
+      - name: Record job result
+        if: always()
+        run: |
+          echo "project=ci-eks-cluster" > result.txt
+          echo "status=${{ job.status }}" >> result.txt
+          echo "status=${{ job.status }}"
+
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: checkov-ci-eks-cluster
+          path: |
+            results/ci-eks-cluster.sarif
+            result.txt
+
   checkov-ci-kube-argo:
     name: Run Checkov - (Project CI Kube Argo)
     runs-on: ubuntu-latest
@@ -95,6 +128,22 @@ jobs:
           output: sarif
           output-file-path: results/ci-kube-argo
 #          config_file: ../../tf-static-analysis-checkov-matrix.yml
+
+      - name: Record job result
+        if: always()
+        run: |
+          echo "project=ci-kube-argo" > result.txt
+          echo "status=${{ job.status }}" >> result.txt
+          echo "status=${{ job.status }}"
+
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: checkov-ci-kube-argo
+          path: |
+            results/ci-kube-argo.sarif
+            result.txt
 
 
 
