@@ -22,8 +22,8 @@ jobs:
         with:
           directory: aws/tools/account-resources
           framework: terraform
-          output: sarif
-          output-file-path: results/account-resources.sarif
+          output_format: sarif
+          output_file_path: results/account-resources.sarif
 #          config_file: ../../tf-static-analysis-checkov-matrix.yml
 
       - name: Record job result
@@ -32,6 +32,13 @@ jobs:
           echo "project=account-resources" > result.txt
           echo "status=${{ job.status }}" >> result.txt
           echo "status=${{ job.status }}"
+
+      - name: Verify outputs exist
+        if: always()
+        run: |
+          test -f results/account-resources.sarif || { echo "SARIF missing"; exit 1; }
+          test -f result.txt || { echo "Result file missing"; exit 1; }
+
 
       - name: Upload result artifact
         if: always()
@@ -57,8 +64,8 @@ jobs:
           directory: aws/tools/ci-vpc
           framework: terraform
           skip_check: CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_130
-          output: sarif
-          output-file-path: results/ci-vpc
+          output_format: sarif
+          output_file_path: results/ci-vpc.sarif
 
       - name: Record job result
         if: always()
@@ -91,8 +98,8 @@ jobs:
           directory: aws/tools/ci-eks-cluster
           framework: terraform
           skip_check: CKV2_AWS_5,CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_23,CKV_AWS_37,CKV_AWS_38,CKV_AWS_39,CKV_AWS_58,CKV_AWS_100,CKV_AWS_111,CKV_AWS_356,CKV_AWS_382
-          output: sarif
-          output-file-path: results/ci-eks-cluster
+          output_format: sarif
+          output_file_path: results/ci-eks-cluster.sarif
     #          config_file: tf-static-analysis-checkov-matrix.yml
 
       - name: Record job result
@@ -125,8 +132,8 @@ jobs:
         with:
           directory: aws/tools/ci-kube-argo
           framework: terraform
-          output: sarif
-          output-file-path: results/ci-kube-argo
+          output_format: sarif
+          output_file_path: results/ci-kube-argo.sarif
 #          config_file: ../../tf-static-analysis-checkov-matrix.yml
 
       - name: Record job result
