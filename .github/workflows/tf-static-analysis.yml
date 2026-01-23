@@ -4,7 +4,7 @@
 
 # When using a matrix approach the jobs must be exactly the same. In this case this is not a good choice for
 # checkov as the warnings that need to be skipped are different per project.
-name: Terraform Static Analysis (Checkov)
+name: Terraform Static Analysis (TFLint, Trivy, Checkov)
 on:
   workflow_dispatch:
   push:
@@ -43,6 +43,7 @@ jobs:
         run: tflint --recursive
         continue-on-error: true
   # Replacement for tfsec
+  # https://medium.com/@fanjum524/office-hours-integrating-trivy-in-github-actions-ci-for-end-to-end-repository-security-devsecops-e7aa640eca51
   trivy-account-resources:
     name: Run Trivy - (Project Account Resources)
     runs-on: ubuntu-latest
@@ -154,6 +155,7 @@ jobs:
       - name: Run TFLint
         run: tflint --recursive
         continue-on-error: true
+  # https://medium.com/@fanjum524/office-hours-integrating-trivy-in-github-actions-ci-for-end-to-end-repository-security-devsecops-e7aa640eca51
   trivy-ci-vpc:
     name: Run Trivy - (Project Account Resources)
     runs-on: ubuntu-latest
@@ -263,6 +265,7 @@ jobs:
       - name: Run TFLint
         run: tflint --recursive
         continue-on-error: true
+    # https://medium.com/@fanjum524/office-hours-integrating-trivy-in-github-actions-ci-for-end-to-end-repository-security-devsecops-e7aa640eca51
   trivy-ci-eks-cluster:
     name: Run Trivy - (Project CI Eks Cluster)
     runs-on: ubuntu-latest
@@ -372,6 +375,7 @@ jobs:
       - name: Run TFLint
         run: tflint --recursive
         continue-on-error: true
+  # https://medium.com/@fanjum524/office-hours-integrating-trivy-in-github-actions-ci-for-end-to-end-repository-security-devsecops-e7aa640eca51
   trivy-ci-kube-argo:
     name: Run Trivy - (Project CI Kube Argo)
     runs-on: ubuntu-latest
