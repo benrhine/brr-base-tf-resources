@@ -1,0 +1,107 @@
+# When using a matrix approach the jobs must be exactly the same. In this case this is not a good choice for
+# checkov as the warnings that need to be skipped are different per project.
+name: Terraform Static Analysis (Checkov)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+jobs:
+  checkov-account-resources:
+    name: Run Checkov - (Project Account Resources)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # https://github.com/bridgecrewio/checkov-action
+      - name: Test account-resources with Checkov
+        id: account-resources
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/account-resources
+          framework: terraform
+#          config_file: ../../tf-static-analysis-checkov-matrix.yml
+
+  checkov-ci-vpc:
+    name: Run Checkov - (Project CI Vpc)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Test ci-vpc with Checkov
+        id: ci-vpc
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/ci-vpc
+          framework: terraform
+          skip_check: CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_130
+
+  checkov-ci-eks-cluster:
+    name: Run Checkov - (Project CI Eks Cluster)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Test ci-eks-cluster with Checkov
+        id: ci-eks-cluster
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/ci-eks-cluster
+          framework: terraform
+          skip_check: CKV2_AWS_5,CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_23,CKV_AWS_37,CKV_AWS_38,CKV_AWS_39,CKV_AWS_58,CKV_AWS_100,CKV_AWS_111,CKV_AWS_356,CKV_AWS_382
+    #          config_file: tf-static-analysis-checkov-matrix.yml
+
+  checkov-ci-kube-argo:
+    name: Run Checkov - (Project CI Kube Argo)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Test ci-kube-argo with Checkov
+        id: ci-kube-argo
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/ci-kube-argo
+          framework: terraform
+#          config_file: ../../tf-static-analysis-checkov-matrix.yml
+
+#      # https://github.com/actions/setup-python
+#      - name: Set up Python 3.9
+#        uses: actions/setup-python@v6.1.0
+#        with:
+#          python-version: 3.9
+#
+#      # https://github.com/bridgecrewio/checkov-action
+#      - name: Test account-resources with Checkov
+#        id: account-resources
+#        uses: bridgecrewio/checkov-action@v12
+#        with:
+#          directory: ${{ matrix.project.path }}
+#          framework: terraform
+#          skip_check: CKV2_AWS_5,CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_23,CKV_AWS_37,CKV_AWS_38,CKV_AWS_39,CKV_AWS_58,CKV_AWS_100,CKV_AWS_111,CKV_AWS_356,CKV_AWS_382
+#          output: sarif
+#          output-file-path: results/${{ matrix.project.name }}.sarif
+#
+#      - name: Upload Checkov SARIF artifact
+#        if: always()
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: checkov-${{ matrix.project.name }}
+#          path: results/${{ matrix.project.name }}.sarif
+
+
+
+
+
+
+
+
+
