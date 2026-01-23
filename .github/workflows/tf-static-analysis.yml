@@ -7,12 +7,12 @@
 name: Terraform Static Analysis (TFLint, Trivy, Checkov)
 on:
   workflow_dispatch:
-#  push:
-#    branches:
-#      - main
-#  pull_request:
-#    branches:
-#      - main
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 permissions:
   security-events: write
@@ -204,7 +204,7 @@ jobs:
         with:
           directory: aws/tools/ci-vpc
           framework: terraform
-          skip_check: CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_130
+          skip_check: CKV2_AWS_11,CKV2_AWS_12 #,CKV_AWS_130
           output_format: sarif
           output_file_path: console,results.sarif
 
