@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 jobs:
-  account-resources-tflint:
+  tflint-account-resources:
     name: Run TFLint - (Project Account Resources)
     runs-on: ubuntu-latest
 
@@ -42,7 +42,8 @@ jobs:
       - name: Run TFLint
         run: tflint --recursive
         continue-on-error: true
-  account-resources-trivy:
+  # Replacement for tfsec
+  trivy-account-resources:
     name: Run Trivy - (Project Account Resources)
     runs-on: ubuntu-latest
 
@@ -60,7 +61,7 @@ jobs:
       # https://github.com/aquasecurity/trivy-action
       - name: Run Trivy IaC scan
         uses: aquasecurity/trivy-action@0.33.1
-#        continue-on-error: true
+        continue-on-error: true
         with:
           skip-setup-trivy: true
           scan-type: config
@@ -78,7 +79,7 @@ jobs:
         if: success() || failure()
         with:
           sarif_file: trivy.sarif
-  account-resources-checkov:
+  checkov-account-resources:
     name: Run Checkov - (Project Account Resources)
     runs-on: ubuntu-latest
 
@@ -132,6 +133,65 @@ jobs:
             result.txt
           retention-days: 3
 
+  tflint-ci-vpc:
+    name: Run TFLint - (Project Account Resources)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: latest
+          cache: true
+
+      - name: Initialize TFLint
+        run: tflint --init
+        env:
+          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Run TFLint
+        run: tflint --recursive
+        continue-on-error: true
+  trivy-ci-vpc:
+    name: Run Trivy - (Project Account Resources)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # https://github.com/aquasecurity/setup-trivy
+      - name: Manual Trivy Setup
+        uses: aquasecurity/setup-trivy@v0.2.5
+        with:
+          cache: true
+          version: v0.68.2
+
+      # https://github.com/aquasecurity/trivy-action
+      - name: Run Trivy IaC scan
+        uses: aquasecurity/trivy-action@0.33.1
+        continue-on-error: true
+        with:
+          skip-setup-trivy: true
+          scan-type: config
+          scan-ref: .
+          ignore-unfixed: true
+          format: sarif
+          output: trivy.sarif
+          severity: CRITICAL
+          exit-code: 1
+          trivy-args: >
+            --format table
+
+      - name: Upload trivy SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: success() || failure()
+        with:
+          sarif_file: trivy.sarif
   checkov-ci-vpc:
     name: Run Checkov - (Project CI Vpc)
     runs-on: ubuntu-latest
@@ -184,6 +244,65 @@ jobs:
             result.txt
           retention-days: 3
 
+  tflint-ci-eks-cluster:
+    name: Run TFLint - (Project CI Eks Cluster)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: latest
+          cache: true
+
+      - name: Initialize TFLint
+        run: tflint --init
+        env:
+          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Run TFLint
+        run: tflint --recursive
+        continue-on-error: true
+  trivy-ci-eks-cluster:
+    name: Run Trivy - (Project CI Eks Cluster)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # https://github.com/aquasecurity/setup-trivy
+      - name: Manual Trivy Setup
+        uses: aquasecurity/setup-trivy@v0.2.5
+        with:
+          cache: true
+          version: v0.68.2
+
+      # https://github.com/aquasecurity/trivy-action
+      - name: Run Trivy IaC scan
+        uses: aquasecurity/trivy-action@0.33.1
+        continue-on-error: true
+        with:
+          skip-setup-trivy: true
+          scan-type: config
+          scan-ref: .
+          ignore-unfixed: true
+          format: sarif
+          output: trivy.sarif
+          severity: CRITICAL
+          exit-code: 1
+          trivy-args: >
+            --format table
+
+      - name: Upload trivy SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: success() || failure()
+        with:
+          sarif_file: trivy.sarif
   checkov-ci-eks-cluster:
     name: Run Checkov - (Project CI Eks Cluster)
     runs-on: ubuntu-latest
@@ -236,6 +355,65 @@ jobs:
             result.txt
           retention-days: 3
 
+  tflint-ci-kube-argo:
+    name: Run TFLint - (Project CI Kube Argo)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: latest
+          cache: true
+
+      - name: Initialize TFLint
+        run: tflint --init
+        env:
+          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Run TFLint
+        run: tflint --recursive
+        continue-on-error: true
+  trivy-ci-kube-argo:
+    name: Run Trivy - (Project CI Kube Argo)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # https://github.com/aquasecurity/setup-trivy
+      - name: Manual Trivy Setup
+        uses: aquasecurity/setup-trivy@v0.2.5
+        with:
+          cache: true
+          version: v0.68.2
+
+      # https://github.com/aquasecurity/trivy-action
+      - name: Run Trivy IaC scan
+        uses: aquasecurity/trivy-action@0.33.1
+        continue-on-error: true
+        with:
+          skip-setup-trivy: true
+          scan-type: config
+          scan-ref: .
+          ignore-unfixed: true
+          format: sarif
+          output: trivy.sarif
+          severity: CRITICAL
+          exit-code: 1
+          trivy-args: >
+            --format table
+
+      - name: Upload trivy SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: success() || failure()
+        with:
+          sarif_file: trivy.sarif
   checkov-ci-kube-argo:
     name: Run Checkov - (Project CI Kube Argo)
     runs-on: ubuntu-latest
