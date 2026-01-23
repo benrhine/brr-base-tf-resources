@@ -149,5 +149,3 @@ module "ci_role_to_assume" {
   property_tags_project     = var.project_name
 }
 
-
-ß

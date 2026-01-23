@@ -72,7 +72,7 @@ jobs:
           directory: aws/tools/account-resources
           framework: terraform
           output_format: sarif
-          output_file_path: console,checkov.sarif
+          output_file_path: console,results.sarif
 
       - name: Record job result
         if: always()
@@ -84,7 +84,7 @@ jobs:
       - name: Verify outputs exist
         if: always()
         run: |
-          test -f checkov.sarif || { echo "SARIF missing"; exit 1; }
+          test -f results.sarif || { echo "SARIF missing"; exit 1; }
           test -f result.txt || { echo "Result file missing"; exit 1; }
 
       - name: Upload SARIF file
@@ -97,7 +97,7 @@ jobs:
         # Or 'soft_fail: true' to checkov.
         if: success() || failure()
         with:
-          sarif_file: checkov.sarif
+          sarif_file: results.sarif
 
       # https://github.com/actions/upload-artifact
       - name: Upload result artifact
