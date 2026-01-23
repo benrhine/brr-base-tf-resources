@@ -1,0 +1,17 @@
+
+# https://dev.to/pooyan/automatically-delete-old-github-actions-runs-94b
+
+name: Delete old workflow runs
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Specify your own schedule
+
+jobs:
+  delete-old-actions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: yanovation/delete-old-actions@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          days-ago: 30

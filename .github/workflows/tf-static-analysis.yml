@@ -1,3 +1,7 @@
+
+# https://medium.com/@lasisiabioduntowobola/integrating-checkov-security-scanning-into-github-actions-pipeline-c11374e391e1
+# https://www.checkov.io/4.Integrations/GitHub%20Actions.html
+
 # When using a matrix approach the jobs must be exactly the same. In this case this is not a good choice for
 # checkov as the warnings that need to be skipped are different per project.
 name: Terraform Static Analysis (Checkov)
@@ -6,13 +10,53 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 permissions:
   security-events: write
   contents: read
 
 jobs:
-  checkov-account-resources:
+  account-resources-tflint:
+    name: Run TFLint - (Project Account Resources)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: latest
+
+      - name: Initialize TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint --recursive
+  account-resources-tfsec:
+    name: Run TFSec - (Project Account Resources)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          format: sarif
+          soft_fail: false
+
+      - name: Upload tfsec SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: tfsec.sarif
+  account-resources-checkov:
     name: Run Checkov - (Project Account Resources)
     runs-on: ubuntu-latest
 
@@ -28,7 +72,7 @@ jobs:
           directory: aws/tools/account-resources
           framework: terraform
           output_format: sarif
-          output_file_path: console,results.sarif
+          output_file_path: console,checkov.sarif
 
       - name: Record job result
         if: always()
@@ -40,7 +84,7 @@ jobs:
       - name: Verify outputs exist
         if: always()
         run: |
-          test -f results.sarif || { echo "SARIF missing"; exit 1; }
+          test -f checkov.sarif || { echo "SARIF missing"; exit 1; }
           test -f result.txt || { echo "Result file missing"; exit 1; }
 
       - name: Upload SARIF file
@@ -53,14 +97,14 @@ jobs:
         # Or 'soft_fail: true' to checkov.
         if: success() || failure()
         with:
-          sarif_file: results.sarif
+          sarif_file: checkov.sarif
 
       # https://github.com/actions/upload-artifact
       - name: Upload result artifact
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: checkov-account-resources
+          name: account-resources-checkov
           path: |
             result.txt
           retention-days: 3
