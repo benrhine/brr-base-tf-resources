@@ -1,4 +1,4 @@
-name: Verify Terraform Static Analysis Results
+name: Verify Checkov CI VPC Result
 
 on:
   workflow_dispatch:
@@ -6,10 +6,13 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    outputs:
+      checkov_vpc_status: ${{ steps.checkov-result.outputs.status }}
 
     steps:
-      - name: Resolve Checkov artifacts
-        id: artifacts
+      # Step 1: Find latest workflow run and the artifact
+      - name: Resolve checkov-ci-vpc artifact
+        id: artifact
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -17,6 +20,7 @@ jobs:
             const workflowFile = "tf-static-analysis.yml";
             const { owner, repo } = context.repo;
 
+            // get the latest completed run
             const runs = await github.rest.actions.listWorkflowRuns({
               owner,
               repo,
@@ -33,72 +37,68 @@ jobs:
             const runId = runs.data.workflow_runs[0].id;
             core.info(`Using workflow run ID: ${runId}`);
 
+            // list artifacts
             const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
               owner,
               repo,
               run_id: runId,
             });
 
-            const checkov = artifacts.data.artifacts.filter(a =>
-              a.name.startsWith("checkov")
-            );
+            const checkovArtifact = artifacts.data.artifacts.find(a => a.name === "checkov-ci-vpc");
 
-            if (!checkov.length) {
-              core.setFailed("No Checkov artifacts found");
+            if (!checkovArtifact) {
+              core.setFailed("Artifact checkov-ci-vpc not found");
               return;
             }
 
-            core.setOutput(
-              "artifacts",
-              JSON.stringify(checkov.map(a => ({
-                name: a.name,
-                url: a.archive_download_url
-              })))
-            );
+            core.setOutput("artifact_url", checkovArtifact.archive_download_url)
 
-      - name: Download and validate Checkov results
+      # Step 2: Download artifact, print result.txt, and set output
+      - name: Download and verify checkov-ci-vpc
+        id: checkov-result
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARTIFACTS: ${{ steps.artifacts.outputs.artifacts }}
         run: |
           set -euo pipefail
-          
-          echo "$ARTIFACTS" | jq -c '.[]' | while read artifact; do
-            name=$(echo "$artifact" | jq -r '.name')
-            url=$(echo "$artifact" | jq -r '.url')
-          
-            echo "🔍 Processing artifact: $name"
-          
-            # Download the artifact zip
-            curl -sSL \
-              -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              "$url" \
-              -o "$name.zip"
-          
-            # Extract it
-            unzip -o "$name.zip" -d "$name"
-          
-            # Check that result.txt exists
-            result_file="$name/result.txt"
-            if [[ ! -f "$result_file" ]]; then
-              echo "❌ Missing result.txt in $name"
-              exit 1
-            fi
-          
-            # Print the contents of the file
-            echo "📄 Contents of $result_file:"
-            cat "$result_file"
-            echo "-------------------------"
-          
-            # Check if it says success
-            if ! grep -q "status=success" "$result_file"; then
-              echo "❌ Checkov failure in $name"
-              exit 1
-            fi
-          
-            echo "✅ $name passed"
-            echo ""
-          done
-          
-          echo "🎉 All Checkov jobs passed"
+
+          ARTIFACT_URL="${{ steps.artifact.outputs.artifact_url }}"
+          ARTIFACT_NAME="checkov-ci-vpc"
+
+          echo "🔍 Downloading $ARTIFACT_NAME"
+          curl -sSL \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$ARTIFACT_URL" \
+            -o "$ARTIFACT_NAME.zip"
+
+          unzip -o "$ARTIFACT_NAME.zip" -d "$ARTIFACT_NAME"
+
+          RESULT_FILE="$ARTIFACT_NAME/result.txt"
+
+          if [[ ! -f "$RESULT_FILE" ]]; then
+            echo "❌ result.txt missing!"
+            echo "status=failure" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "📄 Contents of $RESULT_FILE:"
+          cat "$RESULT_FILE"
+          echo "-------------------------"
+
+          # Read status
+          STATUS=$(grep -Eo "status=.+$" "$RESULT_FILE" | cut -d= -f2)
+
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+
+          if [[ "$STATUS" != "success" ]]; then
+            echo "❌ Checkov CI VPC job failed!"
+            exit 1
+          else
+            echo "✅ Checkov CI VPC job succeeded!"
+          fi
+
+      # Step 3: Demonstrate a conditional step using the job output
+      - name: Conditional step if Checkov passed
+        if: ${{ steps.checkov-result.outputs.status == 'success' }}
+        run: |
+          echo "🎉 Checkov CI VPC succeeded, running this conditional step!"
