@@ -26,6 +26,7 @@ jobs:
         with:
           directory: aws/tools/account-resources
           framework: terraform
+          config_file: ../../../checkov.yml
 
 #      - name: Test ci-vpc with Checkov
 #        id: ci-vpc
@@ -40,6 +41,7 @@ jobs:
         with:
           directory: aws/tools/ci-eks-cluster
           framework: terraform
+          config_file: ../../../checkov.yml
 
       - name: Test ci-kube-argo with Checkov
         id: ci-kube-argo
@@ -47,3 +49,4 @@ jobs:
         with:
           directory: aws/tools/ci-kube-argo
           framework: terraform
+          config_file: ../../../checkov.yml
