@@ -29,7 +29,6 @@ jobs:
           framework: terraform
           output_format: sarif
           output_file_path: console,results.sarif
-#          config_file: ../../tf-static-analysis-checkov-matrix.yml
 
       - name: Record job result
         if: always()
@@ -56,15 +55,16 @@ jobs:
         with:
           sarif_file: results.sarif
 
+      # https://github.com/actions/upload-artifact
       - name: Upload result artifact
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: checkov-account-resources
           path: |
-            results.sarif
+#            results.sarif # Probably dont upload to this location as it will mess with reading results
             result.txt
-          retention-days: 5
+          retention-days: 3
 
   checkov-ci-vpc:
     name: Run Checkov - (Project CI Vpc)
@@ -82,7 +82,7 @@ jobs:
           framework: terraform
           skip_check: CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_130
           output_format: sarif
-          output_file_path: results/ci-vpc.sarif
+          output_file_path: results.sarif
 
       - name: Record job result
         if: always()
@@ -91,14 +91,33 @@ jobs:
           echo "status=${{ job.status }}" >> result.txt
           echo "status=${{ job.status }}"
 
+      - name: Verify outputs exist
+        if: always()
+        run: |
+          test -f results.sarif || { echo "SARIF missing"; exit 1; }
+          test -f result.txt || { echo "Result file missing"; exit 1; }
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
+
       - name: Upload result artifact
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: checkov-ci-vpc
           path: |
-            results/ci-vpc.sarif
+#            results/ci-vpc.sarif
             result.txt
+          retention-days: 3
 
   checkov-ci-eks-cluster:
     name: Run Checkov - (Project CI Eks Cluster)
@@ -116,8 +135,7 @@ jobs:
           framework: terraform
           skip_check: CKV2_AWS_5,CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_23,CKV_AWS_37,CKV_AWS_38,CKV_AWS_39,CKV_AWS_58,CKV_AWS_100,CKV_AWS_111,CKV_AWS_356,CKV_AWS_382
           output_format: sarif
-          output_file_path: results/ci-eks-cluster.sarif
-    #          config_file: tf-static-analysis-checkov-matrix.yml
+          output_file_path: results.sarif
 
       - name: Record job result
         if: always()
@@ -126,14 +144,33 @@ jobs:
           echo "status=${{ job.status }}" >> result.txt
           echo "status=${{ job.status }}"
 
+      - name: Verify outputs exist
+        if: always()
+        run: |
+          test -f results.sarif || { echo "SARIF missing"; exit 1; }
+          test -f result.txt || { echo "Result file missing"; exit 1; }
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
+
       - name: Upload result artifact
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: checkov-ci-eks-cluster
           path: |
-            results/ci-eks-cluster.sarif
+#            results/ci-eks-cluster.sarif
             result.txt
+          retention-days: 3
 
   checkov-ci-kube-argo:
     name: Run Checkov - (Project CI Kube Argo)
@@ -150,8 +187,7 @@ jobs:
           directory: aws/tools/ci-kube-argo
           framework: terraform
           output_format: sarif
-          output_file_path: results/ci-kube-argo.sarif
-#          config_file: ../../tf-static-analysis-checkov-matrix.yml
+          output_file_path: results..sarif
 
       - name: Record job result
         if: always()
@@ -160,14 +196,33 @@ jobs:
           echo "status=${{ job.status }}" >> result.txt
           echo "status=${{ job.status }}"
 
+      - name: Verify outputs exist
+        if: always()
+        run: |
+          test -f results.sarif || { echo "SARIF missing"; exit 1; }
+          test -f result.txt || { echo "Result file missing"; exit 1; }
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
+
       - name: Upload result artifact
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: checkov-ci-kube-argo
           path: |
-            results/ci-kube-argo.sarif
+#            results/ci-kube-argo.sarif
             result.txt
+          retention-days: 3
 
 
 
