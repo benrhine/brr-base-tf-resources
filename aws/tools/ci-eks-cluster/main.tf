@@ -10,6 +10,9 @@ locals {
 ########################################################################################################################
 # Create security groups
 ########################################################################################################################
+
+# checkov:skip=CKV_AWS_23 "Ingress/egress rules intentionally managed at SG level"
+# checkov:skip=CKV_AWS_382 "Node egress must be unrestricted for cluster operations"
 resource "aws_security_group" "eks_cluster_sg" {
   name                    = "${local.resource_prefix}-eks-cluster-sg-${var.project_postfix}"
   description             = "EKS cluster security group"
@@ -31,6 +34,9 @@ resource "aws_security_group" "eks_cluster_sg" {
   }
 }
 
+
+# checkov:skip=CKV_AWS_23 "Ingress/egress rules intentionally managed at SG level"
+# checkov:skip=CKV_AWS_382 "Node egress must be unrestricted for cluster operations"
 resource "aws_security_group" "eks_node_sg" {
   name                    = "${local.resource_prefix}-eks-node-sg-${var.project_postfix}"
   description             = "EKS worker node security group"

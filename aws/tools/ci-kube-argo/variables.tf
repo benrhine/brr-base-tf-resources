@@ -29,3 +29,23 @@ variable "project_id" {
   type        = string
   default     = "001"
 }
+
+# This value should be same as the S3 bucket postfix and should be used for all project that use the given S3 bucket
+# for maintaining their state
+variable "project_postfix" {
+  description = "Randomly generated value generated when creating initial S3 bucket"
+  type        = string
+  default     = "xi7egjwf"
+}
+
+variable "environment" {
+  description = "What environment is this deployed in"
+  type        = string
+  default     = "dev"
+}
+
+variable "environment_prefix" {
+  description = "Prefix resource names with environment?"
+  type        = bool
+  default     = false
+}
