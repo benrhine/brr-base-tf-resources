@@ -41,7 +41,8 @@ jobs:
         with:
           directory: aws/tools/ci-eks-cluster
           framework: terraform
-          config_file: checkov.yml
+          skip_check: CKV2_AWS_5,CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_23,CKV_AWS_37,CKV_AWS_38,CKV_AWS_39,CKV_AWS_58,CKV_AWS_100,CKV_AWS_111,CKV_AWS_356,CKV_AWS_382
+      #          config_file: checkov.yml
 
       - name: Test ci-kube-argo with Checkov
         id: ci-kube-argo
@@ -50,3 +51,4 @@ jobs:
           directory: aws/tools/ci-kube-argo
           framework: terraform
 #          config_file: ../../checkov.yml
+
