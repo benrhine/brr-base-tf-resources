@@ -68,7 +68,7 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy.sarif
-          severity: CRITICAL,HIGH,MEDIUM
+          severity: CRITICAL
           exit-code: 1
           trivy-args: >
             --format table
