@@ -4,11 +4,11 @@ data "aws_availability_zones" "available" {}
 
 
 data "aws_eks_cluster" "eks_cluster" {
-  name = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
+  name = "ci_eks_cluster-001-eks-cluster-${var.project_postfix}"
 }
 
 data "aws_eks_cluster_auth" "eks_cluster" {
-  name = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
+  name = "ci_eks_cluster-001-eks-cluster-${var.project_postfix}"
 }
 
 data "terraform_remote_state" "eks" {
