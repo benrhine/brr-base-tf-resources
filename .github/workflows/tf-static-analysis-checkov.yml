@@ -23,7 +23,7 @@ jobs:
           directory: aws/tools/account-resources
           framework: terraform
           output_format: sarif
-          output_file_path: results/account-resources.sarif
+          output_file_path: console,results/account-resources.sarif
 #          config_file: ../../tf-static-analysis-checkov-matrix.yml
 
       - name: Record job result
@@ -38,7 +38,17 @@ jobs:
 #        run: |
 #          test -f results/account-resources.sarif || { echo "SARIF missing"; exit 1; }
 #          test -f result.txt || { echo "Result file missing"; exit 1; }
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
 
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
 
       - name: Upload result artifact
         if: always()
@@ -48,6 +58,7 @@ jobs:
           path: |
             results/account-resources.sarif
             result.txt
+          retention-days: 5
 
   checkov-ci-vpc:
     name: Run Checkov - (Project CI Vpc)
