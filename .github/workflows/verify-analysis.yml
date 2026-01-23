@@ -1,0 +1,101 @@
+name: Verify Terraform Static Analysis Results
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download and verify Checkov results
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const workflowFile = "tf-static-analysis.yml";
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // 1. Get latest completed workflow run
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: workflowFile,
+              status: "completed",
+              per_page: 1,
+            });
+
+            if (!runs.data.workflow_runs.length) {
+              core.setFailed("No completed workflow runs found.");
+              return;
+            }
+
+            const run = runs.data.workflow_runs[0];
+            core.info(`Using workflow run ID: ${run.id}`);
+
+            // 2. List artifacts from that run
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner,
+              repo,
+              run_id: run.id,
+            });
+
+            const checkovArtifacts = artifacts.data.artifacts.filter(a =>
+              a.name.startsWith("checkov")
+            );
+
+            if (checkovArtifacts.length === 0) {
+              core.setFailed("No Checkov artifacts found.");
+              return;
+            }
+
+            let failed = false;
+
+            for (const artifact of checkovArtifacts) {
+              core.info(`Processing artifact: ${artifact.name}`);
+
+              // 3. Download artifact ZIP
+              const download = await github.rest.actions.downloadArtifact({
+                owner,
+                repo,
+                artifact_id: artifact.id,
+                archive_format: "zip",
+              });
+
+              const fs = require("fs");
+              const path = require("path");
+              const unzip = require("unzipper");
+
+              const zipPath = path.join(process.cwd(), `${artifact.name}.zip`);
+              fs.writeFileSync(zipPath, Buffer.from(download.data));
+
+              await fs
+                .createReadStream(zipPath)
+                .pipe(unzip.Extract({ path: artifact.name }))
+                .promise();
+
+              // 4. Read result.txt
+              const resultFile = path.join(artifact.name, "result.txt");
+
+              if (!fs.existsSync(resultFile)) {
+                core.warning(`Missing result.txt in ${artifact.name}`);
+                failed = true;
+                continue;
+              }
+
+              const contents = fs.readFileSync(resultFile, "utf8");
+              core.info(contents.trim());
+
+              if (!contents.includes("status=success")) {
+                core.error(`❌ Checkov failed in ${artifact.name}`);
+                failed = true;
+              }
+            }
+
+            if (failed) {
+              core.setFailed("One or more Checkov jobs failed.");
+            } else {
+              core.info("✅ All Checkov jobs passed.");
+            }
+
