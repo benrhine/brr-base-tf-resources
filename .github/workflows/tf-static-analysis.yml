@@ -50,14 +50,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      # https://github.com/aquasecurity/setup-trivy
+      - name: Manual Trivy Setup
+        uses: aquasecurity/setup-trivy@v0.2.5
+        with:
+          cache: true
+          version: v0.68.2
+
       # https://github.com/aquasecurity/trivy-action
       - name: Run Trivy IaC scan
         uses: aquasecurity/trivy-action@0.33.1
-        continue-on-error: true
+#        continue-on-error: true
         with:
-          trivy-args: --skip-version-check
+          skip-setup-trivy: true
           scan-type: config
           scan-ref: .
+          ignore-unfixed: true
           format: sarif
           output: trivy.sarif
           severity: CRITICAL,HIGH,MEDIUM
