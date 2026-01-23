@@ -63,7 +63,7 @@ permissions:
   id-token: write
 
 jobs:
-  check_workflow:
+  verify:
     runs-on: ubuntu-latest
     outputs:
       checkov_vpc_status: ${{ steps.checkov-result.outputs.status }}
@@ -163,7 +163,7 @@ jobs:
 #          echo "🎉 Checkov CI VPC succeeded, running this conditional step!"
 
   terraform:
-    needs: check_workflow
+    needs: verify
     runs-on: ubuntu-latest
     if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' }}
     steps:
