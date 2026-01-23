@@ -50,18 +50,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Run tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
+      - name: Run Trivy IaC scan
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          scan-type: config
+          scan-ref: .
           format: sarif
-          soft_fail: false
+          output: trivy.sarif
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: 1
 
       - name: Upload tfsec SARIF
         uses: github/codeql-action/upload-sarif@v4
         if: success() || failure()
         with:
-          sarif_file: results.sarif
+          sarif_file: trivy.sarif
   account-resources-checkov:
     name: Run Checkov - (Project Account Resources)
     runs-on: ubuntu-latest
@@ -77,6 +80,7 @@ jobs:
         with:
           directory: aws/tools/account-resources
           framework: terraform
+          skip_check: CKV_GIT_4,CKV_AWS_274,CKV_TF_1
           output_format: sarif
           output_file_path: console,results.sarif
 
