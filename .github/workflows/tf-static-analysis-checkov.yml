@@ -62,7 +62,6 @@ jobs:
         with:
           name: checkov-account-resources
           path: |
-#            results.sarif # Probably dont upload to this location as it will mess with reading results
             result.txt
           retention-days: 3
 
