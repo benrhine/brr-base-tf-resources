@@ -114,7 +114,6 @@ jobs:
         with:
           name: checkov-ci-vpc
           path: |
-#            results/ci-vpc.sarif
             result.txt
           retention-days: 3
 
@@ -167,7 +166,6 @@ jobs:
         with:
           name: checkov-ci-eks-cluster
           path: |
-#            results/ci-eks-cluster.sarif
             result.txt
           retention-days: 3
 
@@ -219,7 +217,6 @@ jobs:
         with:
           name: checkov-ci-kube-argo
           path: |
-#            results/ci-kube-argo.sarif
             result.txt
           retention-days: 3
 
