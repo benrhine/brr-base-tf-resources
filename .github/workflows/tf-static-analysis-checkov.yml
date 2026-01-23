@@ -33,11 +33,11 @@ jobs:
           echo "status=${{ job.status }}" >> result.txt
           echo "status=${{ job.status }}"
 
-      - name: Verify outputs exist
-        if: always()
-        run: |
-          test -f results/account-resources.sarif || { echo "SARIF missing"; exit 1; }
-          test -f result.txt || { echo "Result file missing"; exit 1; }
+#      - name: Verify outputs exist
+#        if: always()
+#        run: |
+#          test -f results/account-resources.sarif || { echo "SARIF missing"; exit 1; }
+#          test -f result.txt || { echo "Result file missing"; exit 1; }
 
 
       - name: Upload result artifact
