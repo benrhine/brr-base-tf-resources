@@ -6,6 +6,11 @@ on:
   push:
     branches:
       - main
+
+permissions:
+  security-events: write
+  contents: read
+
 jobs:
   checkov-account-resources:
     name: Run Checkov - (Project Account Resources)
@@ -48,7 +53,7 @@ jobs:
         # Or 'soft_fail: true' to checkov.
         if: success() || failure()
         with:
-          sarif_file: results.sarif
+          sarif_file: results/account-resources.sarif
 
       - name: Upload result artifact
         if: always()
