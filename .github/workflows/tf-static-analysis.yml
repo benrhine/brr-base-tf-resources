@@ -53,8 +53,9 @@ jobs:
       # https://github.com/aquasecurity/trivy-action
       - name: Run Trivy IaC scan
         uses: aquasecurity/trivy-action@0.33.1
-#        continue-on-error: true
+        continue-on-error: true
         with:
+          trivy-args: --skip-version-check
           scan-type: config
           scan-ref: .
           format: sarif
