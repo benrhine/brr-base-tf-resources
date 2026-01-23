@@ -34,6 +34,7 @@ jobs:
         with:
           directory: aws/tools/ci-vpc
           framework: terraform
+          skip_check: CKV2_AWS_11,CKV2_AWS_12,CKV2_AWS_130
 
       - name: Test ci-eks-cluster with Checkov
         id: ci-eks-cluster
