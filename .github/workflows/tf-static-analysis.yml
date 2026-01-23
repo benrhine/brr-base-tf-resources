@@ -42,8 +42,8 @@ jobs:
       - name: Run TFLint
         run: tflint --recursive
         continue-on-error: true
-  account-resources-tfsec:
-    name: Run TFSec - (Project Account Resources)
+  account-resources-trivy:
+    name: Run Trivy - (Project Account Resources)
     runs-on: ubuntu-latest
 
     steps:
@@ -70,8 +70,10 @@ jobs:
           output: trivy.sarif
           severity: CRITICAL,HIGH,MEDIUM
           exit-code: 1
+          trivy-args: >
+            --format table
 
-      - name: Upload tfsec SARIF
+      - name: Upload trivy SARIF
         uses: github/codeql-action/upload-sarif@v4
         if: success() || failure()
         with:
