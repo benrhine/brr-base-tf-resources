@@ -28,7 +28,7 @@ jobs:
           directory: aws/tools/account-resources
           framework: terraform
           output_format: sarif
-          output_file_path: console,results/account-resources.sarif
+          output_file_path: console,results.sarif
 #          config_file: ../../tf-static-analysis-checkov-matrix.yml
 
       - name: Record job result
@@ -53,7 +53,7 @@ jobs:
         # Or 'soft_fail: true' to checkov.
         if: success() || failure()
         with:
-          sarif_file: results/account-resources.sarif
+          sarif_file: results.sarif
 
       - name: Upload result artifact
         if: always()
@@ -61,7 +61,7 @@ jobs:
         with:
           name: checkov-account-resources
           path: |
-            results/account-resources.sarif
+            results.sarif
             result.txt
           retention-days: 5
 
