@@ -71,8 +71,6 @@ jobs:
           output: trivy.sarif
           severity: CRITICAL
           exit-code: 1
-          trivy-args: >
-            --format table
 
       - name: Upload trivy SARIF
         uses: github/codeql-action/upload-sarif@v4
@@ -184,8 +182,6 @@ jobs:
           output: trivy.sarif
           severity: CRITICAL
           exit-code: 1
-          trivy-args: >
-            --format table
 
       - name: Upload trivy SARIF
         uses: github/codeql-action/upload-sarif@v4
@@ -295,8 +291,6 @@ jobs:
           output: trivy.sarif
           severity: CRITICAL
           exit-code: 1
-          trivy-args: >
-            --format table
 
       - name: Upload trivy SARIF
         uses: github/codeql-action/upload-sarif@v4
@@ -403,17 +397,23 @@ jobs:
           scan-ref: .
           ignore-unfixed: true
           format: sarif
-          output: trivy.sarif
+          output: trivy.txt
           severity: CRITICAL
           exit-code: 1
-          trivy-args: >
-            --format table
 
-      - name: Upload trivy SARIF
-        uses: github/codeql-action/upload-sarif@v4
-        if: success() || failure()
-        with:
-          sarif_file: trivy.sarif
+      - name: Publish Trivy Output to Summary
+        run: |
+          if [[ -s trivy.txt ]]; then
+            {
+              echo "### Security Output"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```terraform'
+              cat trivy.txt
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
   checkov-ci-kube-argo:
     name: Run Checkov - (Project CI Kube Argo)
     runs-on: ubuntu-latest
