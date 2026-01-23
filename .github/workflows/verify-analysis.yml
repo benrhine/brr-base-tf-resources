@@ -56,3 +56,49 @@ jobs:
               })))
             );
 
+      - name: Download and validate Checkov results
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARTIFACTS: ${{ steps.artifacts.outputs.artifacts }}
+        run: |
+          set -euo pipefail
+          
+          echo "$ARTIFACTS" | jq -c '.[]' | while read artifact; do
+            name=$(echo "$artifact" | jq -r '.name')
+            url=$(echo "$artifact" | jq -r '.url')
+          
+            echo "🔍 Processing artifact: $name"
+          
+            # Download the artifact zip
+            curl -sSL \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "$url" \
+              -o "$name.zip"
+          
+            # Extract it
+            unzip -o "$name.zip" -d "$name"
+          
+            # Check that result.txt exists
+            result_file="$name/result.txt"
+            if [[ ! -f "$result_file" ]]; then
+              echo "❌ Missing result.txt in $name"
+              exit 1
+            fi
+          
+            # Print the contents of the file
+            echo "📄 Contents of $result_file:"
+            cat "$result_file"
+            echo "-------------------------"
+          
+            # Check if it says success
+            if ! grep -q "status=success" "$result_file"; then
+              echo "❌ Checkov failure in $name"
+              exit 1
+            fi
+          
+            echo "✅ $name passed"
+            echo ""
+          done
+          
+          echo "🎉 All Checkov jobs passed"
