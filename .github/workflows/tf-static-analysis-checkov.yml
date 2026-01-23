@@ -81,7 +81,7 @@ jobs:
           framework: terraform
           skip_check: CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_130
           output_format: sarif
-          output_file_path: results.sarif
+          output_file_path: console,results.sarif
 
       - name: Record job result
         if: always()
@@ -133,7 +133,7 @@ jobs:
           framework: terraform
           skip_check: CKV2_AWS_5,CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_23,CKV_AWS_37,CKV_AWS_38,CKV_AWS_39,CKV_AWS_58,CKV_AWS_100,CKV_AWS_111,CKV_AWS_356,CKV_AWS_382
           output_format: sarif
-          output_file_path: results.sarif
+          output_file_path: console,results.sarif
 
       - name: Record job result
         if: always()
@@ -184,7 +184,7 @@ jobs:
           directory: aws/tools/ci-kube-argo
           framework: terraform
           output_format: sarif
-          output_file_path: results..sarif
+          output_file_path: console,results.sarif
 
       - name: Record job result
         if: always()
