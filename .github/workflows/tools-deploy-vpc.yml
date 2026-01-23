@@ -65,73 +65,143 @@ permissions:
 jobs:
   check_workflow:
     runs-on: ubuntu-latest
+    outputs:
+      checkov_vpc_status: ${{ steps.checkov-result.outputs.status }}
+
     steps:
-      - name: Check the last run of "Terraform Static Analysis (TFLint, Trivy, Checkov)"
-        uses: actions/github-script@v8
+      # Step 1: Find latest workflow run and the artifact
+      - name: Resolve checkov-ci-vpc artifact
+        id: artifact
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const workflowName = "Terraform Static Analysis (TFLint, Trivy, Checkov)"; // name of the workflow you want to check
-            const branch = "main"; // branch you want to check on
-            
-            // get all workflow runs for this workflow on this branch
+            const workflowFile = "tf-static-analysis.yml";
+            const { owner, repo } = context.repo;
+
+            // get the latest completed run
             const runs = await github.rest.actions.listWorkflowRuns({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: workflowName,
-              branch: branch,
-              per_page: 1
+              owner,
+              repo,
+              workflow_id: workflowFile,
+              status: "completed",
+              per_page: 1,
             });
-            
+
             if (!runs.data.workflow_runs.length) {
-              core.setFailed(`No runs found for workflow "${workflowName}" on branch "${branch}"`);
-            }
-            
-            const lastRun = runs.data.workflow_runs[0];
-            console.log(`Last run status: ${lastRun.status}, conclusion: ${lastRun.conclusion}`);
-            
-            if (lastRun.conclusion !== "success") {
-              core.setFailed(`Last run did not succeed!`);
+              core.setFailed("No completed workflow runs found");
+              return;
             }
 
-#  terraform:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v5
-#
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v5.0.0
-#        with:
-#          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
-#          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
-#          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
-#          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
-#
-#      - name: Set up Terraform
-#        uses: hashicorp/setup-terraform@v3.1.2
-#        with:
-#          terraform_version: 'latest'
-#
-#      - name: Initialize Terraform
-#        working-directory: aws/tools/ci-vpc
-#        run: terraform init
-#
-#      - name: Plan terraform Changes
-#        working-directory: aws/tools/ci-vpc
-#        env:
-#          TF_VAR_environment: ${{ github.event.inputs.environment }}
-#          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-#          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-#        run: terraform plan
-#
-#      - name: Plan terraform Changes
-#        working-directory: aws/tools/ci-vpc
-#        env:
-#          TF_VAR_environment: ${{ github.event.inputs.environment }}
-#          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-#          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-#        run: terraform apply -auto-approve
+            const runId = runs.data.workflow_runs[0].id;
+            core.info(`Using workflow run ID: ${runId}`);
+
+            // list artifacts
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner,
+              repo,
+              run_id: runId,
+            });
+
+            const checkovArtifact = artifacts.data.artifacts.find(a => a.name === "checkov-ci-vpc");
+
+            if (!checkovArtifact) {
+              core.setFailed("Artifact checkov-ci-vpc not found");
+              return;
+            }
+
+            core.setOutput("artifact_url", checkovArtifact.archive_download_url)
+
+      # Step 2: Download artifact, print result.txt, and set output
+      - name: Download and verify checkov-ci-vpc
+        id: checkov-result
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          ARTIFACT_URL="${{ steps.artifact.outputs.artifact_url }}"
+          ARTIFACT_NAME="checkov-ci-vpc"
+
+          echo "🔍 Downloading $ARTIFACT_NAME"
+          curl -sSL \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$ARTIFACT_URL" \
+            -o "$ARTIFACT_NAME.zip"
+
+          unzip -o "$ARTIFACT_NAME.zip" -d "$ARTIFACT_NAME"
+
+          RESULT_FILE="$ARTIFACT_NAME/result.txt"
+
+          if [[ ! -f "$RESULT_FILE" ]]; then
+            echo "❌ result.txt missing!"
+            echo "status=failure" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "📄 Contents of $RESULT_FILE:"
+          cat "$RESULT_FILE"
+          echo "-------------------------"
+
+          # Read status
+          STATUS=$(grep -Eo "status=.+$" "$RESULT_FILE" | cut -d= -f2)
+
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+
+          if [[ "$STATUS" != "success" ]]; then
+            echo "❌ Checkov CI VPC job failed!"
+            exit 1
+          else
+            echo "✅ Checkov CI VPC job succeeded!"
+          fi
+
+      # Step 3: Demonstrate a conditional step using the job output
+#      - name: Conditional step if Checkov passed
+#        if: ${{ steps.checkov-result.outputs.status == 'success' }}
+#        run: |
+#          echo "🎉 Checkov CI VPC succeeded, running this conditional step!"
+
+  terraform:
+    needs: check_workflow
+    runs-on: ubuntu-latest
+    if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
+          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
+          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
+          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_version: 'latest'
+
+      - name: Initialize Terraform
+        working-directory: aws/tools/ci-vpc
+        run: terraform init
+
+      - name: Plan terraform Changes
+        working-directory: aws/tools/ci-vpc
+        env:
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+        run: terraform plan
+
+      - name: Plan terraform Changes
+        working-directory: aws/tools/ci-vpc
+        env:
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+        run: terraform apply -auto-approve
 
 
 # https://dev.to/terrateam/building-a-cicd-pipeline-for-terraform-with-github-actions-step-by-step-guide-3dlp
