@@ -58,16 +58,17 @@ on:
         required: false
         default: "0.0.0.0/0"
 
-permissions:
-  actions: write
-  id-token: write
+#permissions:
+#  actions: write
+#  id-token: write
 
 jobs:
 #
   verify:
     uses: ./.github/workflows/verify-checkov.yml
     with:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass the token here
+#      github-token: ${{ secrets.GITHUB_TOKEN }}
 
   terraform-deploy:
     needs: verify
