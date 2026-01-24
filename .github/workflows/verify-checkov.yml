@@ -1,21 +1,33 @@
 
-name: Verify Single Checkov Result
+name: Verify Checkov Artifacts
 
 on:
   workflow_call:
-    inputs:
-      artifact_name:
-        required: true
     outputs:
-      status:
-        description: "Status of the project"
-        value: ${{ steps.checkov-result.outputs.status }}
+      checkov_account_resources:
+        description: "Checkov status for account-resources"
+        value: ${{ jobs.verify.outputs.account_resources }}
+      checkov_ci_vpc:
+        description: "Checkov status for ci-vpc"
+        value: ${{ jobs.verify.outputs.ci_vpc }}
+      checkov_ci_eks_cluster:
+        description: "Checkov status for ci-eks-cluster"
+        value: ${{ jobs.verify.outputs.ci_eks_cluster }}
+      checkov_ci_kube_argo:
+        description: "Checkov status for ci-kube-argo"
+        value: ${{ jobs.verify.outputs.ci_kube_argo }}
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+    outputs:
+      account_resources: ${{ steps.read.outputs.account_resources }}
+      ci_vpc: ${{ steps.read.outputs.ci_vpc }}
+      ci_eks_cluster: ${{ steps.read.outputs.ci_eks_cluster }}
+      ci_kube_argo: ${{ steps.read.outputs.ci_kube_argo }}
+
     steps:
-      - name: Resolve artifact
+      - name: Download latest tf-static-analysis artifacts
         id: artifact
         uses: actions/github-script@v7
         with:
@@ -24,6 +36,7 @@ jobs:
             const workflowFile = "tf-static-analysis.yml";
             const { owner, repo } = context.repo;
 
+            // Get latest completed run
             const runs = await github.rest.actions.listWorkflowRuns({
               owner,
               repo,
@@ -33,51 +46,50 @@ jobs:
             });
 
             if (!runs.data.workflow_runs.length) {
-              core.setFailed("No completed workflow runs found");
+              core.setFailed("No completed workflow runs found for tf-static-analysis.yml");
               return;
             }
 
             const runId = runs.data.workflow_runs[0].id;
             core.info(`Using workflow run ID: ${runId}`);
 
+            // List artifacts
             const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
               owner,
               repo,
               run_id: runId,
             });
 
-            const artifact = artifacts.data.artifacts.find(a => a.name === "${{ inputs.artifact_name }}");
-            if (!artifact) {
-              core.setFailed(`Artifact ${{ inputs.artifact_name }} not found`);
-              return;
-            }
+            core.setOutput("artifacts", JSON.stringify(artifacts.data.artifacts));
 
-            core.setOutput("artifact_url", artifact.archive_download_url);
-
-      - name: Download artifact and extract status
-        id: checkov-result
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download and read Checkov results
+        id: read
         run: |
           set -euo pipefail
 
-          ARTIFACT_NAME="${{ inputs.artifact_name }}"
-          ARTIFACT_URL="${{ steps.artifact.outputs.artifact_url }}"
+          # Convert artifact JSON to bash array
+          artifacts=$(echo '${{ steps.artifact.outputs.artifacts }}' | jq -r '.[].name')
 
-          curl -sSL \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "$ARTIFACT_URL" \
-            -o "$ARTIFACT_NAME.zip"
+          for project in account-resources ci-vpc ci-eks-cluster ci-kube-argo; do
+            artifact_name="checkov-${project}"
+            if echo "$artifacts" | grep -q "$artifact_name"; then
+              echo "🔍 Downloading artifact $artifact_name"
+              artifact_id=$(echo '${{ steps.artifact.outputs.artifacts }}' | jq -r ".[] | select(.name==\"$artifact_name\") | .id")
+              curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" \
+                   -H "Accept: application/vnd.github+json" \
+                   -L "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" \
+                   -o "${artifact_name}.zip"
+              unzip -o "${artifact_name}.zip" -d "$artifact_name"
 
-          unzip -o "$ARTIFACT_NAME.zip" -d "$ARTIFACT_NAME"
+              result_file="$artifact_name/result.txt"
+              if [[ -f "$result_file" ]]; then
+                status=$(grep '^status=' "$result_file" | cut -d= -f2)
+              else
+                status="failure"
+              fi
+            else
+              status="failure"
+            fi
 
-          RESULT_FILE="$ARTIFACT_NAME/result.txt"
-
-          if [[ ! -f "$RESULT_FILE" ]]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-          STATUS=$(grep -Eo "status=.+$" "$RESULT_FILE" | cut -d= -f2)
-          echo "status=$STATUS" >> $GITHUB_OUTPUT
+            echo "$project=$status" >> $GITHUB_OUTPUT
+          done
