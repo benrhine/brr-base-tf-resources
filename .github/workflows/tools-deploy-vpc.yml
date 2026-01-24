@@ -62,7 +62,7 @@ on:
 jobs:
 #
   verify:
-    uses: ./.github/workflows/shared/terraform/verify-checkov.yml
+    uses: ./.github/workflows/verify-checkov.yml
 
   terraform-deploy:
     needs: verify
