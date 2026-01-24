@@ -27,55 +27,75 @@ jobs:
       ci_kube_argo: ${{ steps.read.outputs.ci_kube_argo }}
 
     steps:
-      - name: Download Checkov Artifacts
-        id: download
+      - name: Download latest Checkov artifact
+        id: read
         uses: actions/github-script@v7
         with:
           github-token: ${{ inputs.github-token }}
           script: |
+            const artifactsToCheck = [
+              "checkov-account-resources",
+              "checkov-ci-vpc",
+              "checkov-ci-eks-cluster",
+              "checkov-ci-kube-argo"
+            ];
+
             const { owner, repo } = context.repo;
-            const workflowFile = "tf-static-analysis.yml";
 
-            const runs = await github.rest.actions.listWorkflowRuns({
-              owner,
-              repo,
-              workflow_id: workflowFile,
-              status: "completed",
-              per_page: 1,
-            });
+            const outputs = {};
 
-            if (!runs.data.workflow_runs.length) {
-              core.setFailed("No completed workflow runs found");
-              return;
+            for (const artifactName of artifactsToCheck) {
+              // find latest workflow run
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner,
+                repo,
+                workflow_id: "tf-static-analysis.yml",
+                status: "completed",
+                per_page: 10
+              });
+
+              if (!runs.data.workflow_runs.length) {
+                outputs[artifactName] = "failure";
+                continue;
+              }
+
+              const runId = runs.data.workflow_runs[0].id;
+
+              const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+                owner,
+                repo,
+                run_id: runId
+              });
+
+              const artifact = artifacts.data.artifacts.find(a => a.name === artifactName);
+
+              if (!artifact) {
+                outputs[artifactName] = "failure";
+                continue;
+              }
+
+              const download = await github.rest.actions.downloadArtifact({
+                owner,
+                repo,
+                artifact_id: artifact.id,
+                archive_format: "zip"
+              });
+
+              // Save zip locally
+              const fs = require('fs');
+              const AdmZip = require('adm-zip');
+              const zip = new AdmZip(Buffer.from(download.data, 'base64'));
+              zip.extractAllTo(artifactName, true);
+
+              const resultFile = `${artifactName}/result.txt`;
+              if (!fs.existsSync(resultFile)) {
+                outputs[artifactName] = "failure";
+                continue;
+              }
+
+              const content = fs.readFileSync(resultFile, "utf8");
+              const match = content.match(/status=(\w+)/);
+              outputs[artifactName] = match ? match[1] : "failure";
             }
 
-            const runId = runs.data.workflow_runs[0].id;
-            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
-              owner,
-              repo,
-              run_id: runId,
-            });
-
-            const output = {};
-            ["checkov-account-resources","checkov-ci-vpc","checkov-ci-eks-cluster","checkov-ci-kube-argo"].forEach(name => {
-              const art = artifacts.data.artifacts.find(a => a.name === name);
-              output[name] = art ? art.archive_download_url : "";
-            });
-
-            return output;
-
-      - name: Read and set outputs
-        id: read
-        run: |
-          for a in "checkov-account-resources" "checkov-ci-vpc" "checkov-ci-eks-cluster" "checkov-ci-kube-argo"; do
-            URL=$(jq -r .\"$a\" <<< "${{ steps.download.outputs.result }}")
-            if [[ -z "$URL" || "$URL" == "null" ]]; then
-              echo "$a=failure" >> $GITHUB_OUTPUT
-            else
-              # Download artifact, unzip, read result.txt
-              curl -sSL -H "Authorization: Bearer ${{ inputs.github-token }}" -L "$URL" -o artifact.zip
-              unzip -o artifact.zip -d tmp
-              STATUS=$(grep -Eo "status=.+$" tmp/result.txt | cut -d= -f2)
-              echo "$a=$STATUS" >> $GITHUB_OUTPUT
-            fi
-          done
+            return outputs;
