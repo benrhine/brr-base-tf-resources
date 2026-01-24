@@ -3,6 +3,10 @@ name: Verify Checkov Artifacts
 
 on:
   workflow_call:
+    inputs:
+      github-token:
+        required: true
+        type: string
     outputs:
       checkov_account_resources:
         description: "Checkov status for account-resources"
@@ -31,7 +35,7 @@ jobs:
         id: artifact
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ inputs.github-token }}
           script: |
             const workflowFile = "tf-static-analysis.yml";
             const { owner, repo } = context.repo;
@@ -75,7 +79,7 @@ jobs:
             if echo "$artifacts" | grep -q "$artifact_name"; then
               echo "🔍 Downloading artifact $artifact_name"
               artifact_id=$(echo '${{ steps.artifact.outputs.artifacts }}' | jq -r ".[] | select(.name==\"$artifact_name\") | .id")
-              curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" \
+              curl -sSL -H "Authorization: Bearer ${{ inputs.github-token }}" \
                    -H "Accept: application/vnd.github+json" \
                    -L "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" \
                    -o "${artifact_name}.zip"

@@ -63,6 +63,8 @@ jobs:
 #
   verify:
     uses: ./.github/workflows/verify-checkov.yml
+    with:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
 
   terraform-deploy:
     needs: verify
