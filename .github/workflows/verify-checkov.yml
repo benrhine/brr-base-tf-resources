@@ -1,42 +1,102 @@
 
+name: Verify Checkov CI VPC Result
+
 on:
   workflow_call:
+    # Optional input for artifact name
+    inputs:
+      artifact_name:
+        description: "The artifact name to fetch"
+        required: false
+        default: "checkov-ci-vpc"
+
+    # Outputs for calling workflow
     outputs:
-      checkov_ci_vpc:
-        value: ${{ jobs.verify.outputs.ci_vpc }}
+      checkov_vpc_status:
+        description: "Status of the Checkov CI VPC run"
+        value: ${{ steps.checkov-result.outputs.status }}
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     outputs:
-      ci_vpc: ${{ steps.read.outputs.ci_vpc }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      checkov_vpc_status: ${{ steps.checkov-result.outputs.status }}
 
-      - name: Download artifact and read status
-        id: read
+    steps:
+      # Step 1: Find the latest workflow run that has the artifact
+      - name: Resolve latest artifact
+        id: artifact
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const artifactName = "${{ inputs.artifact_name }}";
+            const { owner, repo } = context.repo;
+
+            // list recent workflow runs (completed)
+            const runs = await github.rest.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              status: "completed",
+              per_page: 20
+            });
+
+            let artifactUrl = null;
+
+            for (const run of runs.data.workflow_runs) {
+              const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+                owner,
+                repo,
+                run_id: run.id
+              });
+
+              const artifact = artifacts.data.artifacts.find(a => a.name === artifactName);
+              if (artifact) {
+                artifactUrl = artifact.name;
+                core.info(`Found artifact '${artifactName}' in workflow run ${run.id}`);
+                break;
+              }
+            }
+
+            if (!artifactUrl) {
+              core.setFailed(`Artifact ${artifactName} not found in the last 20 runs`);
+            } else {
+              core.setOutput("artifact_name", artifactName);
+            }
+
+      # Step 2: Download artifact
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.artifact.outputs.artifact_name }}
+          path: checkov-artifact
+
+      # Step 3: Read result.txt and set status
+      - name: Read Checkov result
+        id: checkov-result
         run: |
           set -euo pipefail
 
-          # Download artifact
-          ARTIFACT_NAME="checkov-ci-vpc"
-          ARTIFACT_FILE="$ARTIFACT_NAME.zip"
-
-          echo "Downloading $ARTIFACT_NAME artifact..."
-          curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts" -o "$ARTIFACT_FILE"
-
-          unzip -o "$ARTIFACT_FILE" -d "$ARTIFACT_NAME"
-
-          RESULT_FILE="$ARTIFACT_NAME/result.txt"
+          RESULT_FILE="checkov-artifact/result.txt"
 
           if [[ ! -f "$RESULT_FILE" ]]; then
-            echo "ci_vpc=failure" >> $GITHUB_OUTPUT
+            echo "❌ result.txt missing!"
+            echo "status=failure" >> $GITHUB_OUTPUT
             exit 1
           fi
 
-          STATUS=$(grep '^status=' "$RESULT_FILE" | cut -d= -f2)
-          echo "ci_vpc=$STATUS" >> $GITHUB_OUTPUT
+          echo "📄 Contents of $RESULT_FILE:"
+          cat "$RESULT_FILE"
+          echo "-------------------------"
+
+          STATUS=$(grep -Eo "status=.+$" "$RESULT_FILE" | cut -d= -f2)
+
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+
+          if [[ "$STATUS" != "success" ]]; then
+            echo "❌ Checkov job failed!"
+            exit 1
+          else
+            echo "✅ Checkov job succeeded!"
+
 

@@ -67,8 +67,7 @@ jobs:
   verify:
     uses: ./.github/workflows/verify-checkov.yml
     with:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass the token here
-#      github-token: ${{ secrets.GITHUB_TOKEN }}
+      artifact_name: "checkov-ci-vpc"
 
   terraform-deploy:
     needs: verify
