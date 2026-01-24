@@ -127,7 +127,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: account-resources-checkov
+          name: checkov-account-resources
           path: |
             result.txt
           retention-days: 3
@@ -469,6 +469,52 @@ jobs:
             result.txt
           retention-days: 3
 
+  aggregate-terraform-status:
+    name: Aggregate Terraform Project Status
+    runs-on: ubuntu-latest
+    if: always()
+
+    needs:
+      - checkov-account-resources
+      - checkov-ci-vpc
+      - checkov-ci-eks-cluster
+      - checkov-ci-kube-argo
+
+    steps:
+      - name: Download all Checkov result artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: artifacts
+
+      - name: Generate consolidated status file
+        run: |
+          echo "{" > terraform-status.json
+
+          first=true
+          for result in artifacts/**/result.txt; do
+            project=$(grep '^project=' "$result" | cut -d= -f2)
+            status=$(grep '^status=' "$result" | cut -d= -f2)
+
+            if [ "$first" = true ]; then
+              first=false
+            else
+              echo "," >> terraform-status.json
+            fi
+
+            echo "  \"$project\": \"$status\"" >> terraform-status.json
+          done
+
+          echo "}" >> terraform-status.json
+
+          echo "=== Consolidated Terraform Status ==="
+          cat terraform-status.json
+
+      - name: Upload consolidated status artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: terraform-status
+          path: terraform-status.json
+          retention-days: 7
 
 
 
