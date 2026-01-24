@@ -1,0 +1,37 @@
+
+name: Terraform Status Outputs
+
+on:
+  workflow_call:
+    outputs:
+      checkov_account_resources:
+        value: ${{ jobs.verify.outputs.account_resources }}
+      checkov_ci_vpc:
+        value: ${{ jobs.verify.outputs.ci_vpc }}
+      checkov_ci_eks_cluster:
+        value: ${{ jobs.verify.outputs.ci_eks_cluster }}
+      checkov_ci_kube_argo:
+        value: ${{ jobs.verify.outputs.ci_kube_argo }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      account_resources: ${{ steps.read.outputs.account_resources }}
+      ci_vpc: ${{ steps.read.outputs.ci_vpc }}
+      ci_eks_cluster: ${{ steps.read.outputs.ci_eks_cluster }}
+      ci_kube_argo: ${{ steps.read.outputs.ci_kube_argo }}
+
+    steps:
+      - name: Download terraform status artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: terraform-status
+
+      - name: Read status file and export outputs
+        id: read
+        run: |
+          echo "account_resources=$(jq -r '.["account-resources"]' terraform-status.json)" >> $GITHUB_OUTPUT
+          echo "ci_vpc=$(jq -r '.["ci-vpc"]' terraform-status.json)" >> $GITHUB_OUTPUT
+          echo "ci_eks_cluster=$(jq -r '.["ci-eks-cluster"]' terraform-status.json)" >> $GITHUB_OUTPUT
+          echo "ci_kube_argo=$(jq -r '.["ci-kube-argo"]' terraform-status.json)" >> $GITHUB_OUTPUT
