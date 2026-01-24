@@ -204,7 +204,7 @@ jobs:
         with:
           directory: aws/tools/ci-vpc
           framework: terraform
-          skip_check: CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_130
+          skip_check: CKV2_AWS_11,CKV2_AWS_12 #,CKV_AWS_130
           output_format: sarif
           output_file_path: console,results.sarif
 
@@ -515,67 +515,6 @@ jobs:
 #          name: terraform-status
 #          path: terraform-status.json
 #          retention-days: 7
-
-  compute-checkov-status:
-    name: Compute Checkov Status
-    runs-on: ubuntu-latest
-    needs:
-      - checkov-account-resources
-      - checkov-ci-vpc
-      - checkov-ci-eks-cluster
-      - checkov-ci-kube-argo
-    outputs:
-      checkov_account_resources_status: ${{ steps.set_outputs.outputs.checkov_account_resources_status }}
-      checkov_ci_vpc_status: ${{ steps.set_outputs.outputs.checkov_ci_vpc_status }}
-      checkov_ci_eks_cluster_status: ${{ steps.set_outputs.outputs.checkov_ci_eks_cluster_status }}
-      checkov_ci_kube_argo_status: ${{ steps.set_outputs.outputs.checkov_ci_kube_argo_status }}
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v6
-        with:
-          name: checkov-account-resources
-          path: artifacts/account-resources
-
-      - name: Download CI VPC artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: checkov-ci-vpc
-          path: artifacts/ci-vpc
-
-      - name: Download CI EKS Cluster artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: checkov-ci-eks-cluster
-          path: artifacts/ci-eks
-
-      - name: Download CI Kube Argo artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: checkov-ci-kube-argo
-          path: artifacts/ci-kube-argo
-
-      - name: Read Checkov statuses
-        id: set_outputs
-        run: |
-          # Read status from each result.txt
-          account_resources_status=$(cat artifacts/account-resources/result.txt | grep status | cut -d'=' -f2)
-          ci_vpc_status=$(cat artifacts/ci-vpc/result.txt | grep status | cut -d'=' -f2)
-          ci_eks_cluster_status=$(cat artifacts/ci-eks/result.txt | grep status | cut -d'=' -f2)
-          ci_kube_argo_status=$(cat artifacts/ci-kube-argo/result.txt | grep status | cut -d'=' -f2)
-
-          # Export as workflow outputs
-          echo "checkov_account_resources_status=$account_resources_status" >> $GITHUB_OUTPUT
-          echo "checkov_ci_vpc_status=$ci_vpc_status" >> $GITHUB_OUTPUT
-          echo "checkov_ci_eks_cluster_status=$ci_eks_cluster_status" >> $GITHUB_OUTPUT
-          echo "checkov_ci_kube_argo_status=$ci_kube_argo_status" >> $GITHUB_OUTPUT
-
-      - name: Print statuses
-        run: |
-          echo "Checkov Account Resources Status: ${{ steps.set_outputs.outputs.checkov_account_resources_status }}"
-          echo "Checkov CI VPC Status: ${{ steps.set_outputs.outputs.checkov_ci_vpc_status }}"
-          echo "Checkov CI EKS Cluster Status: ${{ steps.set_outputs.outputs.checkov_ci_eks_cluster_status }}"
-          echo "Checkov CI Kube Argo Status: ${{ steps.set_outputs.outputs.checkov_ci_kube_argo_status }}"
-
 
 
 

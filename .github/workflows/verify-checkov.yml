@@ -1,37 +1,83 @@
 
-name: Terraform Status Outputs
+name: Verify Single Checkov Result
 
 on:
   workflow_call:
+    inputs:
+      artifact_name:
+        required: true
     outputs:
-      checkov_account_resources:
-        value: ${{ jobs.verify.outputs.account_resources }}
-      checkov_ci_vpc:
-        value: ${{ jobs.verify.outputs.ci_vpc }}
-      checkov_ci_eks_cluster:
-        value: ${{ jobs.verify.outputs.ci_eks_cluster }}
-      checkov_ci_kube_argo:
-        value: ${{ jobs.verify.outputs.ci_kube_argo }}
+      status:
+        description: "Status of the project"
+        value: ${{ steps.checkov-result.outputs.status }}
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    outputs:
-      account_resources: ${{ steps.read.outputs.account_resources }}
-      ci_vpc: ${{ steps.read.outputs.ci_vpc }}
-      ci_eks_cluster: ${{ steps.read.outputs.ci_eks_cluster }}
-      ci_kube_argo: ${{ steps.read.outputs.ci_kube_argo }}
-
     steps:
-      - name: Download terraform status artifact
-        uses: actions/download-artifact@v6
+      - name: Resolve artifact
+        id: artifact
+        uses: actions/github-script@v7
         with:
-          name: terraform-status
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const workflowFile = "tf-static-analysis.yml";
+            const { owner, repo } = context.repo;
 
-      - name: Read status file and export outputs
-        id: read
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: workflowFile,
+              status: "completed",
+              per_page: 1,
+            });
+
+            if (!runs.data.workflow_runs.length) {
+              core.setFailed("No completed workflow runs found");
+              return;
+            }
+
+            const runId = runs.data.workflow_runs[0].id;
+            core.info(`Using workflow run ID: ${runId}`);
+
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner,
+              repo,
+              run_id: runId,
+            });
+
+            const artifact = artifacts.data.artifacts.find(a => a.name === "${{ inputs.artifact_name }}");
+            if (!artifact) {
+              core.setFailed(`Artifact ${{ inputs.artifact_name }} not found`);
+              return;
+            }
+
+            core.setOutput("artifact_url", artifact.archive_download_url);
+
+      - name: Download artifact and extract status
+        id: checkov-result
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "account_resources=$(jq -r '.["account-resources"]' terraform-status.json)" >> $GITHUB_OUTPUT
-          echo "ci_vpc=$(jq -r '.["ci-vpc"]' terraform-status.json)" >> $GITHUB_OUTPUT
-          echo "ci_eks_cluster=$(jq -r '.["ci-eks-cluster"]' terraform-status.json)" >> $GITHUB_OUTPUT
-          echo "ci_kube_argo=$(jq -r '.["ci-kube-argo"]' terraform-status.json)" >> $GITHUB_OUTPUT
+          set -euo pipefail
+
+          ARTIFACT_NAME="${{ inputs.artifact_name }}"
+          ARTIFACT_URL="${{ steps.artifact.outputs.artifact_url }}"
+
+          curl -sSL \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$ARTIFACT_URL" \
+            -o "$ARTIFACT_NAME.zip"
+
+          unzip -o "$ARTIFACT_NAME.zip" -d "$ARTIFACT_NAME"
+
+          RESULT_FILE="$ARTIFACT_NAME/result.txt"
+
+          if [[ ! -f "$RESULT_FILE" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          STATUS=$(grep -Eo "status=.+$" "$RESULT_FILE" | cut -d= -f2)
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
