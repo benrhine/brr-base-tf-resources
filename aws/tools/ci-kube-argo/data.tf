@@ -11,15 +11,15 @@ data "aws_eks_cluster_auth" "eks_cluster" {
   name = "ci_eks_cluster-001-eks-cluster-${var.project_postfix}"
 }
 
-data "terraform_remote_state" "eks" {
-  backend = "s3"
-
-  config = {
-    bucket = "tf-state-xi7egjwf"
-    key    = "ci-eks-cluster/terraform.tfstate"
-    region = "us-east-2"
-  }
-}
+# data "terraform_remote_state" "eks" {
+#   backend = "s3"
+#
+#   config = {
+#     bucket = "tf-state-xi7egjwf"
+#     key    = "ci-eks-cluster/terraform.tfstate"
+#     region = "us-east-2"
+#   }
+# }
 
 data "kubernetes_secret" "argocd_admin" {
   metadata {

@@ -96,6 +96,10 @@ resource "helm_release" "argocd" {
   chart      = "argo-cd"
   version    = "9.3.4"
 
+  timeout    = 900        # ← DO THIS
+  wait       = true
+  atomic     = true
+
   namespace = "argocd"
 
   create_namespace = true
