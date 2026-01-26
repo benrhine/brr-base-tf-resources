@@ -19,9 +19,9 @@ output "eks_cluster_arn" {
   value = aws_eks_cluster.eks_cluster.arn
 }
 
-output "eks_cluster_node_group_arn" {
-  value = aws_eks_node_group.eks_node_group.arn
-}
+# output "eks_cluster_node_group_arn" {
+#   value = aws_eks_node_group.eks_node_group.arn
+# }
 
 output "eks_role_name" {
   value = aws_iam_role.eks_role.name
