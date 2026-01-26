@@ -66,13 +66,13 @@ data "aws_iam_role" "ci" {
 }
 
 data "aws_eks_cluster" "eks_cluster" {
-  name = module.eks_cluster.name
+  name = module.eks_cluster.cluster_name
 
   # depends_on = [aws_eks_cluster.eks_cluster]
 }
 
 data "aws_eks_cluster_auth" "eks_cluster" {
-  name = module.eks_cluster.name
+  name = module.eks_cluster.cluster_name
 
   # depends_on = [aws_eks_cluster.eks_cluster]
 }

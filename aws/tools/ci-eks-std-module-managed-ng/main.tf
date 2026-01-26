@@ -329,13 +329,13 @@ locals {
 }
 
 resource "aws_eks_access_entry" "eks_role_access" {
-  cluster_name            = module.eks_cluster.name
+  cluster_name            = module.eks_cluster.cluster_name
   principal_arn           = local.eks_role_arn
   type                    = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "eks_role_access_policy" {
-  cluster_name            = module.eks_cluster.name
+  cluster_name            = module.eks_cluster.cluster_name
   policy_arn              = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn           = local.eks_role_arn
 
@@ -346,13 +346,13 @@ resource "aws_eks_access_policy_association" "eks_role_access_policy" {
 }
 
 resource "aws_eks_access_entry" "oidc_role_access" {
-  cluster_name            = module.eks_cluster.name
+  cluster_name            = module.eks_cluster.cluster_name
   principal_arn           = local.ci_role_arn
   type                    = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "oidc_role_access_policy" {
-  cluster_name            = module.eks_cluster.name
+  cluster_name            = module.eks_cluster.cluster_name
   policy_arn              = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn           = local.ci_role_arn
 
@@ -363,13 +363,13 @@ resource "aws_eks_access_policy_association" "oidc_role_access_policy" {
 }
 
 resource "aws_eks_access_entry" "sso_role_access" {
-  cluster_name            = module.eks_cluster.name
+  cluster_name            = module.eks_cluster.cluster_name
   principal_arn           = local.sso_role_arn
   type                    = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "sso_role_access_policy" {
-  cluster_name            = module.eks_cluster.name
+  cluster_name            = module.eks_cluster.cluster_name
   policy_arn              = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn           = local.sso_role_arn
 
