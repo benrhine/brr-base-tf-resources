@@ -16,7 +16,7 @@ output "eks_cluster_name" {
 }
 
 output "eks_cluster_arn" {
-  value = module.eks_cluster.arn
+  value = module.eks_cluster.cluster_arn
 }
 
 # output "eks_cluster_node_group_arn" {
