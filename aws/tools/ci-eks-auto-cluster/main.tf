@@ -197,6 +197,8 @@ resource "aws_eks_cluster" "eks_cluster" {
     authentication_mode   = var.cluster_auth_mode
   }
 
+  bootstrap_self_managed_addons = false
+
   # The "Easy Button"
   compute_config {
     enabled       = true
