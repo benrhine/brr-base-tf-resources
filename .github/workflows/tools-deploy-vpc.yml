@@ -58,9 +58,9 @@ on:
         required: false
         default: "0.0.0.0/0"
 
-#permissions:
-#  actions: write
-#  id-token: write
+permissions:
+  actions: write
+  id-token: write
 
 jobs:
 
