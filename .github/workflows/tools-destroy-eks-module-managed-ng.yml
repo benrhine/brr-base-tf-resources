@@ -1,4 +1,4 @@
-name: Terraform Destroy EKS Std ( TOOLS Account )
+name: Destroy EKS Std Module with managed ng( TOOLS Account )
 on:
   workflow_dispatch:
     inputs:

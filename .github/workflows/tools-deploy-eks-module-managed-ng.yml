@@ -1,4 +1,4 @@
-name: Terraform Deploy EKS Std ( TOOLS Account )
+name: Deploy EKS Std Module with managed ng( TOOLS Account )
 on:
   #  push:
   workflow_dispatch:
