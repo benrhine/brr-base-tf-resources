@@ -242,96 +242,62 @@ resource "aws_eks_cluster" "eks_cluster" {
   }
 }
 
-resource "aws_iam_openid_connect_provider" "eks" {
-  url = data.aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer
-
-  client_id_list = ["sts.amazonaws.com"]
-
-  thumbprint_list = [
-    data.tls_certificate.eks.certificates[0].sha1_fingerprint
-  ]
-}
-
-
-resource "aws_iam_role" "ebs_csi" {
-  name = "${aws_eks_cluster.eks_cluster.name}-ebs-csi-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Federated = aws_iam_openid_connect_provider.eks.arn
-      }
-      Action = "sts:AssumeRoleWithWebIdentity"
-      Condition = {
-        StringEquals = {
-          format(
-            "%s:sub",
-            replace(aws_iam_openid_connect_provider.eks.url, "https://", "")
-          ) = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
-        }
-      }
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ebs_csi" {
-  role       = aws_iam_role.ebs_csi.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-}
-
-
-
-resource "aws_eks_addon" "ebs_csi" {
+resource "aws_eks_addon" "coredns" {
   cluster_name = aws_eks_cluster.eks_cluster.name
-  addon_name   = "aws-ebs-csi-driver"
-
-  service_account_role_arn = aws_iam_role.ebs_csi.arn
-
-  resolve_conflicts_on_create = "OVERWRITE"
+  addon_name   = "coredns"
 }
 
-########################################################################################################################
-# Create Eks Node Group
-########################################################################################################################
-# resource "aws_eks_node_group" "eks_node_group" {
-#   cluster_name            = aws_eks_cluster.eks_cluster.name
-#   node_group_name         = "${local.resource_prefix}-node-group-${var.project_postfix}"
-#   node_role_arn           = aws_iam_role.eks_node_group_role.arn
-#   subnet_ids              = local.private_subnet_ids
-#   scaling_config {
-#     desired_size          = var.cluster_ng_desired_size
-#     max_size              = var.cluster_ng_max_size
-#     min_size              = var.cluster_ng_min_size
-#   }
+
+# resource "aws_iam_openid_connect_provider" "eks" {
+#   url = data.aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer
 #
-#   instance_types          = [var.environment_instance_type]
+#   client_id_list = ["sts.amazonaws.com"]
 #
-#   remote_access {
-#     ec2_ssh_key           = var.cluster_ng_remote_access_key  # Replace with your key pair name
-#   }
-#
-#   update_config {
-#     max_unavailable       = var.cluster_ng_max_unavailable
-#   }
-#
-#   depends_on = [
-#     aws_iam_role_policy_attachment.eks_node_group_policy,
-#     aws_iam_role_policy_attachment.eks_cni_policy,
-#     aws_iam_role_policy_attachment.eks_ecr_policy
+#   thumbprint_list = [
+#     data.tls_certificate.eks.certificates[0].sha1_fingerprint
 #   ]
-#
-#   tags = {
-#     environment           = var.environment
-#     terraform             = "true"
-#     org                   = var.org_name_abv
-#     team                  = var.team_name
-#     create_date           = timestamp()
-#     cluster_name          = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
-#     name                  = "${local.resource_prefix}-node-group-${var.project_postfix}"
-#   }
 # }
+#
+#
+# resource "aws_iam_role" "ebs_csi" {
+#   name = "${aws_eks_cluster.eks_cluster.name}-ebs-csi-role"
+#
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect = "Allow"
+#       Principal = {
+#         Federated = aws_iam_openid_connect_provider.eks.arn
+#       }
+#       Action = "sts:AssumeRoleWithWebIdentity"
+#       Condition = {
+#         StringEquals = {
+#           format(
+#             "%s:sub",
+#             replace(aws_iam_openid_connect_provider.eks.url, "https://", "")
+#           ) = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+#         }
+#       }
+#     }]
+#   })
+# }
+#
+# resource "aws_iam_role_policy_attachment" "ebs_csi" {
+#   role       = aws_iam_role.ebs_csi.name
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+# }
+#
+#
+#
+# resource "aws_eks_addon" "ebs_csi" {
+#   cluster_name = aws_eks_cluster.eks_cluster.name
+#   addon_name   = "aws-ebs-csi-driver"
+#
+#   service_account_role_arn = aws_iam_role.ebs_csi.arn
+#
+#   resolve_conflicts_on_create = "OVERWRITE"
+# }
+
 
 ########################################################################################################################
 # Create cluster access entries
@@ -406,72 +372,5 @@ resource "aws_eks_access_policy_association" "sso_role_access_policy" {
   depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
 
-
-#####################################################################################
-# Attempt 2
-#####################################################################################
-# module "eks" {
-#   source  = "terraform-aws-modules/eks/aws"
-#   version = "~> 21.11"
-#
-#   name    = "example-2-${random_string.suffix.result}"
-#   kubernetes_version = "1.34"
-#
-#   iam_role_arn = aws_iam_role.eks_role.arn
-#
-#   # Optional
-#   endpoint_public_access = true
-#
-#   # Optional: Adds the current caller identity as an administrator via cluster access entry
-#   enable_cluster_creator_admin_permissions = true
-#
-#   addons = {
-#     coredns                = {}
-#     eks-pod-identity-agent = {}
-#     kube-proxy             = {}
-#     vpc-cni                = {}
-#   }
-#
-#   vpc_id     = data.aws_vpc.custom.id
-#   subnet_ids = local.private_subnet_ids
-#
-#   eks_managed_node_groups = {
-#     example = {
-#       instance_types = ["t3.small"]
-#       min_size       = 1
-#       max_size       = 2
-#       desired_size   = 1
-#       subnet_ids      = local.private_subnet_ids
-#       vpc_security_group_ids = [aws_security_group.eks_cluster_sg.id]
-#       iam_role_arn = aws_iam_role.eks_node_group_role.arn
-#       # remote_access = {
-#       #   ec2_ssh_key = "brr-test"  # Replace with your key pair name
-#       # }
-#     }
-#   }
-#
-#   access_entries = {
-#     # One access entry with a policy associated
-#     example = {
-#       kubernetes_groups = []
-#       principal_arn     = aws_iam_role.eks_role.arn
-#
-#       policy_associations = {
-#         example = {
-#           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
-#           access_scope = {
-#             namespaces = ["default"]
-#             type       = "namespace"
-#           }
-#         }
-#       }
-#     }
-#   }
-#
-#   tags = {
-#     environment = "dev"
-#     terraform   = "true"
-#   }
-# }
 
 
