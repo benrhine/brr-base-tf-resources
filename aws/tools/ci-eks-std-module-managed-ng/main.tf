@@ -227,16 +227,27 @@ module "eks_cluster" {
   name               = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
   kubernetes_version = "1.34"
 
+  addons = {
+    coredns                = {}
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
+    kube-proxy             = {}
+    vpc-cni                = {
+      before_compute = true
+    }
+  }
+
   # Optional
   endpoint_public_access = true
 
   # Optional: Adds the current caller identity as an administrator via cluster access entry
   enable_cluster_creator_admin_permissions = true
 
-  # compute_config = {
-  #   enabled    = true
-  #   node_pools = ["general-purpose"]
-  # }
+  compute_config = {
+    enabled    = false
+    # node_pools = ["general-purpose"]
+  }
 
   vpc_id     = "vpc-0990c7354df2574fe"
   subnet_ids = local.private_subnet_ids
