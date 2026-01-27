@@ -249,7 +249,7 @@ module "eks_cluster" {
     # node_pools = ["general-purpose"]
   }
 
-  vpc_id     = "vpc-0990c7354df2574fe"
+  vpc_id     = "vpc-0f524ca463638deb1"
   subnet_ids = local.private_subnet_ids
 
   # EKS Managed Node Group(s)
