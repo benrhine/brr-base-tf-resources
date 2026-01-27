@@ -43,9 +43,9 @@ output "cluster_admin_role_001" {
   value = aws_eks_access_entry.eks_role_access.principal_arn
 }
 
-output "cluster_admin_role_002" {
-  value = aws_eks_access_entry.oidc_role_access.principal_arn
-}
+# output "cluster_admin_role_002" {
+#   value = aws_eks_access_entry.oidc_role_access.principal_arn
+# }
 
 output "cluster_admin_role_003" {
   value = aws_eks_access_entry.sso_role_access.principal_arn
