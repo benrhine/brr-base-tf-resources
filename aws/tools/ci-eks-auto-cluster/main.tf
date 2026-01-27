@@ -242,9 +242,40 @@ resource "aws_eks_cluster" "eks_cluster" {
   }
 }
 
+resource "aws_eks_node_group" "bootstrap" {
+  cluster_name    = aws_eks_cluster.eks_cluster.name
+  node_group_name = "bootstrap"
+  node_role_arn  = aws_iam_role.eks_node_group_role.arn
+  subnet_ids     = local.private_subnet_ids
+
+  scaling_config {
+    desired_size = 1
+    max_size     = 1
+    min_size     = 1
+  }
+
+  instance_types = ["t3.small"]
+  capacity_type  = "ON_DEMAND"
+
+  labels = {
+    role = "bootstrap"
+  }
+
+  taint {
+    key    = "bootstrap-only"
+    value  = "true"
+    effect = "NO_SCHEDULE"
+  }
+}
+
+
 resource "aws_eks_addon" "coredns" {
   cluster_name = aws_eks_cluster.eks_cluster.name
   addon_name   = "coredns"
+
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 
