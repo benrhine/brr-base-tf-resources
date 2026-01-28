@@ -225,10 +225,10 @@ module "eks_cluster" {
   version = "~> 21.15.1"
 
   name               = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
-  kubernetes_version = "1.35"
+  kubernetes_version = "1.34"
 
   # Enable modern authentication mode
-  authentication_mode   = var.cluster_auth_mode
+  # authentication_mode   = var.cluster_auth_mode
 
   addons = {
     coredns                = {}
@@ -279,46 +279,7 @@ module "eks_cluster" {
   }
 }
 
-########################################################################################################################
-# Create Eks Node Group
-########################################################################################################################
-# resource "aws_eks_node_group" "eks_node_group" {
-#   cluster_name            = aws_eks_cluster.eks_cluster.name
-#   node_group_name         = "${local.resource_prefix}-node-group-${var.project_postfix}"
-#   node_role_arn           = aws_iam_role.eks_node_group_role.arn
-#   subnet_ids              = local.private_subnet_ids
-#   scaling_config {
-#     desired_size          = var.cluster_ng_desired_size
-#     max_size              = var.cluster_ng_max_size
-#     min_size              = var.cluster_ng_min_size
-#   }
-#
-#   instance_types          = [var.environment_instance_type]
-#
-#   remote_access {
-#     ec2_ssh_key           = var.cluster_ng_remote_access_key  # Replace with your key pair name
-#   }
-#
-#   update_config {
-#     max_unavailable       = var.cluster_ng_max_unavailable
-#   }
-#
-#   depends_on = [
-#     aws_iam_role_policy_attachment.eks_node_group_policy,
-#     aws_iam_role_policy_attachment.eks_cni_policy,
-#     aws_iam_role_policy_attachment.eks_ecr_policy
-#   ]
-#
-#   tags = {
-#     environment           = var.environment
-#     terraform             = "true"
-#     org                   = var.org_name_abv
-#     team                  = var.team_name
-#     create_date           = timestamp()
-#     cluster_name          = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
-#     name                  = "${local.resource_prefix}-node-group-${var.project_postfix}"
-#   }
-# }
+
 
 ########################################################################################################################
 # Create cluster access entries
@@ -392,73 +353,5 @@ resource "aws_eks_access_policy_association" "sso_role_access_policy" {
   }
   depends_on = [aws_iam_role.eks_role, module.eks_cluster]
 }
-
-
-#####################################################################################
-# Attempt 2
-#####################################################################################
-# module "eks" {
-#   source  = "terraform-aws-modules/eks/aws"
-#   version = "~> 21.11"
-#
-#   name    = "example-2-${random_string.suffix.result}"
-#   kubernetes_version = "1.34"
-#
-#   iam_role_arn = aws_iam_role.eks_role.arn
-#
-#   # Optional
-#   endpoint_public_access = true
-#
-#   # Optional: Adds the current caller identity as an administrator via cluster access entry
-#   enable_cluster_creator_admin_permissions = true
-#
-#   addons = {
-#     coredns                = {}
-#     eks-pod-identity-agent = {}
-#     kube-proxy             = {}
-#     vpc-cni                = {}
-#   }
-#
-#   vpc_id     = data.aws_vpc.custom.id
-#   subnet_ids = local.private_subnet_ids
-#
-#   eks_managed_node_groups = {
-#     example = {
-#       instance_types = ["t3.small"]
-#       min_size       = 1
-#       max_size       = 2
-#       desired_size   = 1
-#       subnet_ids      = local.private_subnet_ids
-#       vpc_security_group_ids = [aws_security_group.eks_cluster_sg.id]
-#       iam_role_arn = aws_iam_role.eks_node_group_role.arn
-#       # remote_access = {
-#       #   ec2_ssh_key = "brr-test"  # Replace with your key pair name
-#       # }
-#     }
-#   }
-#
-#   access_entries = {
-#     # One access entry with a policy associated
-#     example = {
-#       kubernetes_groups = []
-#       principal_arn     = aws_iam_role.eks_role.arn
-#
-#       policy_associations = {
-#         example = {
-#           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
-#           access_scope = {
-#             namespaces = ["default"]
-#             type       = "namespace"
-#           }
-#         }
-#       }
-#     }
-#   }
-#
-#   tags = {
-#     environment = "dev"
-#     terraform   = "true"
-#   }
-# }
 
 
