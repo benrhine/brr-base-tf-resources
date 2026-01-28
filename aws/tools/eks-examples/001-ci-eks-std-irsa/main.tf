@@ -190,7 +190,7 @@ resource "aws_eks_cluster" "eks_cluster" {
 
   # This value is true by default and turns on aws-cni, kube-proxy, and coredns during creation
   # I am adding the value here by default for transparency
-  bootstrap_self_managed_addons = true
+  # bootstrap_self_managed_addons = true
 
   vpc_config {
     subnet_ids            = local.private_subnet_ids
@@ -238,7 +238,7 @@ resource "aws_eks_node_group" "eks_node_group" {
     min_size              = var.cluster_ng_min_size
   }
 
-  instance_types          = [var.environment_instance_type]
+  instance_types          = ["t3.medium", "t3a.medium", "m5.large"]
 
   remote_access {
     ec2_ssh_key           = var.cluster_ng_remote_access_key  # Replace with your key pair name
