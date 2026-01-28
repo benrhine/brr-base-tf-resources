@@ -1,4 +1,4 @@
-name: Terraform Destroy Kubernetes ArgoCD ( TOOLS Account )
+name: Destroy Kubernetes ArgoCD ( TOOLS Account )
 on:
   workflow_dispatch:
     inputs:

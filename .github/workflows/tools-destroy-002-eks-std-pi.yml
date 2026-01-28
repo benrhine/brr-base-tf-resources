@@ -1,4 +1,4 @@
-name: Terraform Destroy EKS Std Pod Identity ( TOOLS Account )
+name: Destroy EKS Std Pod Identity ( TOOLS Account )
 on:
   workflow_dispatch:
     inputs:

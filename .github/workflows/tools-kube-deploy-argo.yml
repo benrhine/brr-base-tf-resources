@@ -1,4 +1,4 @@
-name: Terraform Deploy Kubernetes ArgoCD ( TOOLS Account )
+name: Deploy Kubernetes ArgoCD ( TOOLS Account )
 on:
   #  push:
   workflow_dispatch:

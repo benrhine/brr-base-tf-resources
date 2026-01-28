@@ -1,4 +1,4 @@
-name: Terraform Deploy EKS Std IRSA ( TOOLS Account )
+name: Deploy EKS Std IRSA ( TOOLS Account )
 on:
   #  push:
   workflow_dispatch:

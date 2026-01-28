@@ -1,4 +1,4 @@
-name: Terraform Deploy EKS Std auto ( TOOLS Account )
+name: Deploy EKS Std auto ( TOOLS Account )
 on:
   #  push:
   workflow_dispatch:

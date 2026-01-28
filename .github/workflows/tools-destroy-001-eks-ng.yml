@@ -1,4 +1,4 @@
-name: Destroy EKS Std IRSA ( TOOLS Account )
+name: Destroy EKS NG ( TOOLS Account )
 on:
   workflow_dispatch:
     inputs:
@@ -89,11 +89,11 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        working-directory: aws/tools/eks-examples/001-ci-eks-std-irsa
+        working-directory: aws/tools/eks-node-groups
         run: terraform init
 
       - name: Plan destroy terraform Changes
-        working-directory: aws/tools/eks-examples/001-ci-eks-std-irsa
+        working-directory: aws/tools/eks-node-groups
         env:
           #          TF_VAR_org_name_abv: ${{}}
           #          TF_VAR_org_name_full: ${{}}
@@ -113,7 +113,7 @@ jobs:
         run: terraform plan -destroy
 
       - name: Apply destroy terraform Changes
-        working-directory: aws/tools/eks-examples/001-ci-eks-std-irsa
+        working-directory: aws/tools/eks-node-groups
         env:
           #          TF_VAR_org_name_abv: ${{}}
           #          TF_VAR_org_name_full: ${{}}

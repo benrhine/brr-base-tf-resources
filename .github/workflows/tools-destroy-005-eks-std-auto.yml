@@ -1,4 +1,4 @@
-name: Terraform Destroy EKS Std auto ( TOOLS Account )
+name: Destroy EKS Std auto ( TOOLS Account )
 on:
   workflow_dispatch:
     inputs:

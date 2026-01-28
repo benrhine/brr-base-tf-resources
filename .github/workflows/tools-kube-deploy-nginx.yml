@@ -1,4 +1,4 @@
-name: Terraform Deploy Kubernetes Nginx ( TOOLS Account )
+name: Deploy Kubernetes Nginx ( TOOLS Account )
 on:
   #  push:
   workflow_dispatch:

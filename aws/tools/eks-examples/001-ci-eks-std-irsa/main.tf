@@ -112,7 +112,7 @@ resource "aws_iam_role_policy_attachment" "eks_policy" {
 // Create custom policy to assign to role
 // This is not a production ready policy but grants wide access for ease of testing
 resource "aws_iam_policy" "policy" {
-  name                    = "eks-all-policy-${random_string.suffix.result}"
+  name                    = "eks-all-policy"
   description             = "Provide all permissions for EKS"
   policy                  = data.aws_iam_policy_document.eks_all_permissions.json
 }
@@ -187,6 +187,7 @@ locals {
 resource "aws_eks_cluster" "eks_cluster" {
   name                    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
   role_arn                = aws_iam_role.eks_role.arn
+  version  = "1.32"
 
   # This value is true by default and turns on aws-cni, kube-proxy, and coredns during creation
   # I am adding the value here by default for transparency
@@ -230,6 +231,7 @@ resource "aws_eks_cluster" "eks_cluster" {
 resource "aws_eks_node_group" "eks_node_group" {
   cluster_name            = aws_eks_cluster.eks_cluster.name
   node_group_name         = "${local.resource_prefix}-node-group-${var.project_postfix}"
+  version                 = aws_eks_cluster.eks_cluster.version
   node_role_arn           = aws_iam_role.eks_node_group_role.arn
   subnet_ids              = local.private_subnet_ids
   scaling_config {
@@ -337,73 +339,5 @@ resource "aws_eks_access_policy_association" "sso_role_access_policy" {
   }
   depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
-
-
-#####################################################################################
-# Attempt 2
-#####################################################################################
-# module "eks" {
-#   source  = "terraform-aws-modules/eks/aws"
-#   version = "~> 21.11"
-#
-#   name    = "example-2-${random_string.suffix.result}"
-#   kubernetes_version = "1.34"
-#
-#   iam_role_arn = aws_iam_role.eks_role.arn
-#
-#   # Optional
-#   endpoint_public_access = true
-#
-#   # Optional: Adds the current caller identity as an administrator via cluster access entry
-#   enable_cluster_creator_admin_permissions = true
-#
-#   addons = {
-#     coredns                = {}
-#     eks-pod-identity-agent = {}
-#     kube-proxy             = {}
-#     vpc-cni                = {}
-#   }
-#
-#   vpc_id     = data.aws_vpc.custom.id
-#   subnet_ids = local.private_subnet_ids
-#
-#   eks_managed_node_groups = {
-#     example = {
-#       instance_types = ["t3.small"]
-#       min_size       = 1
-#       max_size       = 2
-#       desired_size   = 1
-#       subnet_ids      = local.private_subnet_ids
-#       vpc_security_group_ids = [aws_security_group.eks_cluster_sg.id]
-#       iam_role_arn = aws_iam_role.eks_node_group_role.arn
-#       # remote_access = {
-#       #   ec2_ssh_key = "brr-test"  # Replace with your key pair name
-#       # }
-#     }
-#   }
-#
-#   access_entries = {
-#     # One access entry with a policy associated
-#     example = {
-#       kubernetes_groups = []
-#       principal_arn     = aws_iam_role.eks_role.arn
-#
-#       policy_associations = {
-#         example = {
-#           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
-#           access_scope = {
-#             namespaces = ["default"]
-#             type       = "namespace"
-#           }
-#         }
-#       }
-#     }
-#   }
-#
-#   tags = {
-#     environment = "dev"
-#     terraform   = "true"
-#   }
-# }
 
 

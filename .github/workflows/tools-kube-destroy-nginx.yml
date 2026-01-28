@@ -1,4 +1,4 @@
-name: Terraform Destroy Kubernetes Nginx ( TOOLS Account )
+name: Destroy Kubernetes Nginx ( TOOLS Account )
 on:
   workflow_dispatch:
     inputs:
