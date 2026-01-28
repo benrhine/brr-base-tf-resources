@@ -225,18 +225,18 @@ module "eks_cluster" {
   version = "~> 21.15.1"
 
   name               = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
-  kubernetes_version = "1.34"
+  kubernetes_version = "1.35"
 
-  addons = {
-    # coredns                = {}
-    eks-pod-identity-agent = {
-      before_compute = true
-    }
-    kube-proxy             = {}
-    vpc-cni                = {
-      before_compute = true
-    }
-  }
+  # addons = {
+  #   coredns                = {}
+  #   eks-pod-identity-agent = {
+  #     before_compute = true
+  #   }
+  #   kube-proxy             = {}
+  #   vpc-cni                = {
+  #     before_compute = true
+  #   }
+  # }
 
   # Optional
   endpoint_public_access = true
