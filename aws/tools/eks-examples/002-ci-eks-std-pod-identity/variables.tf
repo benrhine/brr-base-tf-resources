@@ -21,7 +21,7 @@ variable "team_name" {
 variable "project_name" {
   description = "Name of the project"
   type        = string
-  default     = "ci_eks_cluster"
+  default     = "eks-std-pi"
 }
 
 variable "project_id" {

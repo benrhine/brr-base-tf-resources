@@ -1,0 +1,234 @@
+name: Terraform Deploy EKS Std auto ( TOOLS Account )
+on:
+  #  push:
+  workflow_dispatch:
+    inputs:
+      project-name:
+        description: "Custom Name"
+        required: false
+        default: "ci_eks_cluster"
+      project-id:
+        description: "Custom Id"
+        required: false
+        default: "001"
+      project-postfix:
+        description: "Random string applied to the end of resource names for uniqueness - should match S3 bucket"
+        required: true
+        default: "xi7egjwf"
+      environment:
+        description: "Target Environment"
+        required: false
+        type: choice
+        options:
+          - dev
+          - test
+          - staging
+          - prod
+        default: dev
+      environment-prefix:
+        description: "Should resources be prefixed with environment?"
+        required: true
+        type: boolean
+        default: false
+      environment-instance-type:
+        description: "What instance type to use"
+        required: true
+        type: choice
+        options:
+          - t3.small
+        default: t3.small
+      cluster-auth-mode:
+        description: "What auth mode to use"
+        required: true
+        type: choice
+        options:
+          - API_AND_CONFIG_MAP
+        default: API_AND_CONFIG_MAP
+      cluster-ng-desired-size:
+        description: "How many instances are desired?"
+        required: true
+        default: 1
+      cluster-ng-max-size:
+        description: "What is the maximum number of instances"
+        required: true
+        default: 2
+      cluster-ng-min-size:
+        description: "What is the minimum number of instances"
+        required: true
+        default: 1
+      cluster-ng-max-unavailable:
+        description: "What is the maximum number unavailable"
+        required: true
+        default: 1
+      cluster-ng-remote-access-key:
+        description: "Which ssh key to use"
+        required: true
+        default: brr-test
+
+permissions:
+  actions: write
+  id-token: write
+
+jobs:
+
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      checkov_ci_eks_cluster_status: ${{ steps.checkov-result.outputs.status }}
+
+    steps:
+      # Step 1: Find latest workflow run and the artifact
+      - name: Resolve checkov-ci-eks-cluster artifact
+        id: artifact
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const workflowFile = "tf-static-analysis.yml";
+            const { owner, repo } = context.repo;
+
+            // get the latest completed run
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: workflowFile,
+              status: "completed",
+              per_page: 1,
+            });
+
+            if (!runs.data.workflow_runs.length) {
+              core.setFailed("No completed workflow runs found");
+              return;
+            }
+
+            const runId = runs.data.workflow_runs[0].id;
+            core.info(`Using workflow run ID: ${runId}`);
+
+            // list artifacts
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner,
+              repo,
+              run_id: runId,
+            });
+
+            const checkovArtifact = artifacts.data.artifacts.find(a => a.name === "checkov-ci-eks-cluster");
+
+            if (!checkovArtifact) {
+              core.setFailed("Artifact checkov-ci-eks-cluster not found");
+              return;
+            }
+
+            core.setOutput("artifact_url", checkovArtifact.archive_download_url)
+
+      # Step 2: Download artifact, print result.txt, and set output
+      - name: Download and verify checkov-ci-eks-cluster
+        id: checkov-result
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          ARTIFACT_URL="${{ steps.artifact.outputs.artifact_url }}"
+          ARTIFACT_NAME="checkov-ci-eks-cluster"
+
+          echo "🔍 Downloading $ARTIFACT_NAME"
+          curl -sSL \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$ARTIFACT_URL" \
+            -o "$ARTIFACT_NAME.zip"
+
+          unzip -o "$ARTIFACT_NAME.zip" -d "$ARTIFACT_NAME"
+
+          RESULT_FILE="$ARTIFACT_NAME/result.txt"
+
+          if [[ ! -f "$RESULT_FILE" ]]; then
+            echo "❌ result.txt missing!"
+            echo "status=failure" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "📄 Contents of $RESULT_FILE:"
+          cat "$RESULT_FILE"
+          echo "-------------------------"
+
+          # Read status
+          STATUS=$(grep -Eo "status=.+$" "$RESULT_FILE" | cut -d= -f2)
+
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+
+          if [[ "$STATUS" != "success" ]]; then
+            echo "❌ Checkov CI VPC job failed!"
+            exit 1
+          else
+            echo "✅ Checkov CI VPC job succeeded!"
+          fi
+
+  terraform-deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    if: ${{ needs.verify.outputs.checkov_ci_eks_cluster_status == 'success' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
+          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
+          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
+          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_version: 'latest'
+
+      - name: Initialize Terraform
+        working-directory: aws/tools/eks-examples/005-ci-eks-auto-cluster
+        run: terraform init
+
+      - name: Validate Terraform
+        working-directory: aws/tools/eks-examples/005-ci-eks-auto-cluster
+        run: terraform validate
+
+      - name: Plan terraform Changes
+        working-directory: aws/tools/eks-examples/005-ci-eks-auto-cluster
+        env:
+#          TF_VAR_org_name_abv: ${{}}
+#          TF_VAR_org_name_full: ${{}}
+#          TF_VAR_team_name: ${{}}
+          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+          TF_VAR_project_postfix: ${{ github.event.inputs.project-postfix }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_environment_prefix: ${{ github.event.inputs.environment-prefix }}
+          TF_VAR_environment_instance_type: ${{ github.event.inputs.environment-instance-type }}
+          TF_VAR_cluster_auth_mode: ${{ github.event.inputs.cluster-auth-mode }}
+          TF_VAR_cluster_ng_desired_size: ${{ github.event.inputs.cluster-ng-desired-size }}
+          TF_VAR_cluster_ng_max_size: ${{ github.event.inputs.cluster-ng-max-size }}
+          TF_VAR_cluster_ng_min_size: ${{ github.event.inputs.cluster-ng-min-size }}
+          TF_VAR_cluster_ng_max_unavailable: ${{ github.event.inputs.cluster-ng-max-unavailable }}
+          TF_VAR_cluster_ng_remote_access_key: ${{ github.event.inputs.cluster-ng-remote-access-key }}
+        run: terraform plan
+
+      - name: Apply terraform Changes
+        working-directory: aws/tools/eks-examples/005-ci-eks-auto-cluster
+        env:
+#          TF_VAR_org_name_abv: ${{}}
+#          TF_VAR_org_name_full: ${{}}
+#          TF_VAR_team_name: ${{}}
+          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+          TF_VAR_project_postfix: ${{ github.event.inputs.project-postfix }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_environment_prefix: ${{ github.event.inputs.environment-prefix }}
+          TF_VAR_environment_instance_type: ${{ github.event.inputs.environment-instance-type }}
+          TF_VAR_cluster_auth_mode: ${{ github.event.inputs.cluster-auth-mode }}
+          TF_VAR_cluster_ng_desired_size: ${{ github.event.inputs.cluster-ng-desired-size }}
+          TF_VAR_cluster_ng_max_size: ${{ github.event.inputs.cluster-ng-max-size }}
+          TF_VAR_cluster_ng_min_size: ${{ github.event.inputs.cluster-ng-min-size }}
+          TF_VAR_cluster_ng_max_unavailable: ${{ github.event.inputs.cluster-ng-max-unavailable }}
+          TF_VAR_cluster_ng_remote_access_key: ${{ github.event.inputs.cluster-ng-remote-access-key }}
+        run: terraform apply -auto-approve

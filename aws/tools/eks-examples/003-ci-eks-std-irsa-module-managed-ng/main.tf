@@ -112,7 +112,7 @@ resource "aws_iam_role_policy_attachment" "eks_policy" {
 // Create custom policy to assign to role
 // This is not a production ready policy but grants wide access for ease of testing
 resource "aws_iam_policy" "policy" {
-  name                    = "eks-all-policy"
+  name                    = "eks-all-policy-${random_string.suffix.result}"
   description             = "Provide all permissions for EKS"
   policy                  = data.aws_iam_policy_document.eks_all_permissions.json
 }

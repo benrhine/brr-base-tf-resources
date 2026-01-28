@@ -1,4 +1,4 @@
-name: Terraform Deploy EKS Std ( TOOLS Account )
+name: Terraform Deploy EKS Std IRSA ( TOOLS Account )
 on:
   #  push:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       project-name:
         description: "Custom Name"
         required: false
-        default: "ci_eks_cluster"
+        default: "eks-std-irsa"
       project-id:
         description: "Custom Id"
         required: false
@@ -186,15 +186,15 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        working-directory: aws/tools/ci-eks-cluster
+        working-directory: aws/tools/eks-examples/001-ci-eks-std-irsa
         run: terraform init
 
       - name: Validate Terraform
-        working-directory: aws/tools/ci-eks-cluster
+        working-directory: aws/tools/eks-examples/001-ci-eks-std-irsa
         run: terraform validate
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/ci-eks-cluster
+        working-directory: aws/tools/eks-examples/001-ci-eks-std-irsa
         env:
 #          TF_VAR_org_name_abv: ${{}}
 #          TF_VAR_org_name_full: ${{}}
@@ -214,7 +214,7 @@ jobs:
         run: terraform plan
 
       - name: Apply terraform Changes
-        working-directory: aws/tools/ci-eks-cluster
+        working-directory: aws/tools/eks-examples/001-ci-eks-std-irsa
         env:
 #          TF_VAR_org_name_abv: ${{}}
 #          TF_VAR_org_name_full: ${{}}

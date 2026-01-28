@@ -11,7 +11,7 @@ terraform {
 
   backend "s3" {
     bucket                  = "tf-state-xi7egjwf"
-    key                     = "ci-eks-std-module-managed-ng/terraform.tfstate"
+    key                     = "005-ci-eks-auto-cluster/terraform.tfstate"
     region                  = "us-east-2"
     encrypt                 = true
     use_lockfile            = true

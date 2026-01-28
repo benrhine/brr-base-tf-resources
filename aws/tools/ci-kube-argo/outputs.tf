@@ -37,3 +37,7 @@ output "argocd_server_address" {
     : "NodePort service – use kubectl port-forward"
   )
 }
+
+output "server_address_reminder" {
+  value = "REMEMBER YOU CAN NOT BE CONNECTED TO TAILSCALE OR A VPN IN ORDER FOR THE SERVER ADDRESS TO RESOLVE"
+}
