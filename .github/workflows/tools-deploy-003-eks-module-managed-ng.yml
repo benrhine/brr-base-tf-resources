@@ -36,7 +36,10 @@ on:
         type: choice
         options:
           - t3.small
-        default: t3.small
+          - t3.medium
+          - t3a.medium
+          - m5.large
+        default: t3.medium
       cluster-auth-mode:
         description: "What auth mode to use"
         required: true

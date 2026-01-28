@@ -8,3 +8,7 @@ This project should only be executed using the CI environment and will build a n
 * Make sure the `ci-vpc` project has been run from ci
 * Make sure Checkov / Linting passes as the CI for this project depends on it
 * Run this project from ci
+
+== Details
+
+This project uses the HashiCorp provided module `module "eks_cluster" {` terraform resources to create an EKS cluster then attaches the necessary roles to it to ensure access.
