@@ -45,7 +45,7 @@ variable "environment_prefix" {
 variable "environment_instance_type" {
   description = "What instance type backs the environment"
   type        = string
-  default     = "t3.small"
+  default     = "t3.medium"
 }
 
 variable "cluster_auth_mode" {
