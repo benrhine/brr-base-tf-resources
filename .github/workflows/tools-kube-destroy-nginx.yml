@@ -50,10 +50,10 @@ jobs:
         working-directory: aws/tools/ci-kube-nginx
         run: terraform init
 
-      - name: Plan terraform Changes
+      - name: Plan destroy terraform Changes
         working-directory: aws/tools/ci-kube-nginx
         run: terraform plan -destroy
 
-      - name: Plan terraform Changes
+      - name: Apply destroy terraform Changes
         working-directory: aws/tools/ci-kube-nginx
         run: terraform destroy -auto-approve

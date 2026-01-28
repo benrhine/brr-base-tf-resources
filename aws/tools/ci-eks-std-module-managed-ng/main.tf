@@ -227,16 +227,19 @@ module "eks_cluster" {
   name               = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
   kubernetes_version = "1.35"
 
-  # addons = {
-  #   coredns                = {}
-  #   eks-pod-identity-agent = {
-  #     before_compute = true
-  #   }
-  #   kube-proxy             = {}
-  #   vpc-cni                = {
-  #     before_compute = true
-  #   }
-  # }
+  # Enable modern authentication mode
+  authentication_mode   = var.cluster_auth_mode
+
+  addons = {
+    coredns                = {}
+    # eks-pod-identity-agent = {
+    #   before_compute = true
+    # }
+    kube-proxy             = {}
+    # vpc-cni                = {
+    #   before_compute = true
+    # }
+  }
 
   # Optional
   endpoint_public_access = true

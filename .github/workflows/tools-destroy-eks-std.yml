@@ -92,7 +92,7 @@ jobs:
         working-directory: aws/tools/ci-eks-cluster
         run: terraform init
 
-      - name: Plan terraform Changes
+      - name: Plan destroy terraform Changes
         working-directory: aws/tools/ci-eks-cluster
         env:
           #          TF_VAR_org_name_abv: ${{}}
@@ -112,7 +112,7 @@ jobs:
           TF_VAR_cluster_ng_remote_access_key: ${{ github.event.inputs.cluster-ng-remote-access-key }}
         run: terraform plan -destroy
 
-      - name: Plan terraform Changes
+      - name: Apply destroy terraform Changes
         working-directory: aws/tools/ci-eks-cluster
         env:
           #          TF_VAR_org_name_abv: ${{}}
