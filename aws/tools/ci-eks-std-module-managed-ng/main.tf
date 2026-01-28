@@ -228,7 +228,7 @@ module "eks_cluster" {
   kubernetes_version = "1.34"
 
   addons = {
-    coredns                = {}
+    # coredns                = {}
     eks-pod-identity-agent = {
       before_compute = true
     }
