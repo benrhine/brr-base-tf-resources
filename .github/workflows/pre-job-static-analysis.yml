@@ -1,0 +1,4 @@
+name: pre-job-static-analysis.yml
+on:
+
+jobs:

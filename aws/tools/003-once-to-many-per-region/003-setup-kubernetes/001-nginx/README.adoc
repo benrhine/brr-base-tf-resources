@@ -1,0 +1,3 @@
+= CI Kubernetes Nginx
+
+This deploys correctly and is reachable
