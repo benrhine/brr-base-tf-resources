@@ -1,4 +1,4 @@
-name: 003-002 Test
+name: 003-001 Deploy VPC
 on:
   workflow_dispatch:
 

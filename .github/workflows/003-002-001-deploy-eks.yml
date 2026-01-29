@@ -1,4 +1,4 @@
-name: 003-001 Test
+name: 003-002-001 Deploy EKS Std IRSA
 on:
   workflow_dispatch:
 

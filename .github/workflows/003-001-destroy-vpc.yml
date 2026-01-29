@@ -1,0 +1,12 @@
+name: 003-001 Destroy VPC
+on:
+  workflow_dispatch:
+
+jobs:
+  tflint-account-resources:
+    name: Run TFLint - (Project Account Resources)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
