@@ -1,4 +1,12 @@
-name: pre-job-static-analysis.yml
+name: 001 Test
 on:
+  workflow_dispatch:
 
 jobs:
+  tflint-account-resources:
+    name: Run TFLint - (Project Account Resources)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
