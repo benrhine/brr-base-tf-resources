@@ -1,0 +1,9 @@
+= CI Eks Cluster
+
+This project should only be executed using the CI environment and will build a new Aws EKS cluster with correctly attached roles for access from your SSO role, the CI role, or the generated EKS role.
+
+== How do deploy?
+
+* Make sure the `account-resources` project has been executed
+* Make sure the `ci-vpc` project has been run from ci
+* Run this project from ci

@@ -1,0 +1,61 @@
+
+
+* https://github.com/argoproj/argo-helm
+** get latest version of argo helm deployment
+* https://readmedium.com/how-to-set-up-argo-cd-with-terraform-to-implement-pure-gitops-d5a1d797926a
+** argo on GKE
+* https://dev.to/aws-builders/gitops-with-argocd-on-amazon-eks-using-terraform-a-complete-implementation-guide-1inc
+** argo with route53 domain
+* https://dev.to/aws-builders/managing-aws-eks-access-entries-with-terraform-and-opentofu-414
+** granting role access
+* https://tekneed.com/three-ways-to-install-argo-cd-on-kubernetes-cluster/
+* https://nulldog.com/terraform-get-default-vpc-id-easy-methods
+** import vpc
+* https://terrateam.io/blog/deploy-argocd-terraform-kubernetes
+* https://spacelift.io/blog/argocd-terraform
+* https://medium.com/@verajm/how-to-display-checkov-security-findings-in-github-actions-summary-a0db4b4e37a8
+* https://mahira-technology.medium.com/guarding-the-gateway-a-comprehensive-guide-to-securing-argocd-admin-passwords-739581a2de5b
+* https://medium.com/@frunzasamuel/configure-argo-cd-in-a-kubernetes-cluster-with-terraform-c0aa4b9f75db
+* https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_addon
+** need to look at this more
+* https://dev.to/aws-builders/gitops-with-argocd-on-amazon-eks-using-terraform-a-complete-implementation-guide-1inc
+* https://dev.to/aws-builders/managing-aws-eks-access-entries-with-terraform-and-opentofu-414
+* https://www.thecloudpanda.com/blog/kubernetes-argocd-setup-terraform/
+* https://spacelift.io/blog/argocd-terraform
+** I used this one for some of the setup
+* https://terrateam.io/blog/deploy-argocd-terraform-kubernetes
+*
+
+
+If you see the following error ...
+
+----
+│ Error: installation failed
+│
+│   with helm_release.argocd,
+│   on main.tf line 92, in resource "helm_release" "argocd":
+│   92: resource "helm_release" "argocd" {
+│
+│ Unable to continue with install: CustomResourceDefinition
+│ "applications.argoproj.io" in namespace "" exists and cannot be imported
+│ into the current release: invalid ownership metadata; label validation
+│ error: missing key "app.kubernetes.io/managed-by": must be set to "Helm";
+│ annotation validation error: missing key "meta.helm.sh/release-name": must
+│ be set to "argocd"; annotation validation error: missing key
+│ "meta.helm.sh/release-namespace": must be set to "argocd"
+╵
+Error: Terraform exited with code 1.
+Error: Process completed with exit code 1.
+----
+
+Then run the following 3 commands
+
+----
+kubectl delete crd applications.argoproj.io
+kubectl delete crd appprojects.argoproj.io
+kubectl delete crd applicationsets.argoproj.io
+----
+
+This happens because argo was already installed at some point and EKS remembers it
+
+

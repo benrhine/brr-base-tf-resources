@@ -1,0 +1,7 @@
+= Account Resources
+
+This is the very base most project for setting up brand new Aws accounts. This project will create the S3 bucket to store Terraform/OpenTofu state as well as setup the OIDC role between Aws and GitHub
+
+[WARNING]
+This project can not be executed using CI processes at this time. This causes state problems and as this project really only needs to be executed at the very beginning when setting up the account I do not see that as a problem. This project should be executed from a local machine and then the state migrated to the S3 bucket which is created. This project can then be worked by multiple individuals if necessary.
+
