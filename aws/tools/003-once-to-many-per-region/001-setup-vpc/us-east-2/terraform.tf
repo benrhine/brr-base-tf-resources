@@ -11,7 +11,7 @@ terraform {
 
 
   backend "s3" {
-    bucket                  = "tf-state-vfqysx7t"
+    bucket                  = "tf-state-xi7egjwf"
     key                     = "003-once-to-many-per-region/001-setup-vpc/us-east-2/terraform.tfstate"
     region                  = "us-east-2"
     encrypt                 = true

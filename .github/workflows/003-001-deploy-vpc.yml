@@ -213,7 +213,7 @@ jobs:
 
   terraform-deploy-us-west-2:
 #    if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' && inputs.aws-region == 'us-west-2' }}
-    if: ${{ inputs.aws-region == 'us-east-2' }}
+    if: ${{ inputs.aws-region == 'us-west-2' }}
     needs: verify
     runs-on: ubuntu-latest
     defaults:
