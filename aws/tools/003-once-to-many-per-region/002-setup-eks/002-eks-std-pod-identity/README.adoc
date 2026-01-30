@@ -3,6 +3,9 @@
 [NOTE]
 Both the cluster and the node group currently deploy successfully as of 20260129 @ 1230. However, pod identity is not fully configured
 
+[TIP]
+This project has already been configured for `us-east-2` and `us-west-2` to demonstrate multi region layout.
+
 Setting up EKS with Pod Identity is not currently clear in my head. I have started with this project and added the necessary data object and role object, however, the association is not in place as it requires Kubernetes service accounts and that is not clear to me on what that looks like and needs more research.
 
 It seem to me that I need to add to the terraform the creation of Kubernetes service accounts then need to perform the association to the IAM role, AND THEN that iam role can be assumed to grant permissions.

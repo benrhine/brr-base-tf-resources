@@ -1,4 +1,5 @@
 = brr-base-tf-resources
+:toc:
 
 [NOTE]
 This is not the cleanest repo I have ever written so there may be some visible kruft around.
@@ -9,6 +10,8 @@ Look at the branches of this project. One is configured for Terraform, another i
 The goal of this repo is to provide a complete working template for new cloud account setups including base CI jobs to facilitate clear and easy setup and configuration.
 
 Eventually I hope to have templates for multiple cloud providers. As it currently stands all projects are written with Aws in mind and are contained under the aws folder.
+
+== The various ways to deploy EKS
 
 The `002-setup-eks` project contains multiple valid ways in which to set up and configure your eks cluster. However, these various examples are in varying states of working order. Minimally all projects will successfully deploy an EKS cluster to Aws. See details below for state ...
 
@@ -41,6 +44,29 @@ The `002-setup-eks` project contains multiple valid ways in which to set up and 
 [NOTE]
 Please reference the sub-readmes in each of the specified projects.
 
+== Aws
+
+=== Directory structure
+
+This project could _technically_ be vastly simplified and all Terraform/OpenTofu projects could be placed directly under the `aws` folder. This is due to the fact that all these projects are configured in such a way that account and environments can be passed into them and executed idempotently across accounts and regions.
+
+However, this becomes an issue when executing locally due to how Terraform/OpenTofu maintains its state. In example if all the projects are just under `aws` and I want to execute them from my machine to both dev and prod; whatever the second execution is will try to overwrite the first executions state. For this reason Terraform/OpenTofu projects must be duplicated per account and or region.
+
+[NOTE]
+Some of this can be remediated by only executing in CI and using OpenTofu instead of Terraform as OpenTofu allows for variables in the `terraform` block, meaning that the path to where the state is stored can be changed programmatically.
+
+== Azure
+
+- TODO
+
+=== Directory structure
+
+== GCP
+
+- TODO
+
+=== Directory structure
+
 == Known Issues
 
 * common - node group is not created or fails to attach to the cluster
@@ -62,6 +88,12 @@ Please reference the sub-readmes in each of the specified projects.
 ** this is the one to review for multi environment management
 * https://7tonshark.com/posts/organize-github-workflows/
 ** How to organize github workflows
+* https://blog.saintmalik.me/argocd-on-kubernetes-cluster/
+* https://registry.terraform.io/modules/squareops/argocd/kubernetes/latest
+** Module for creation
+* https://dev.to/aws-builders/gitops-with-argocd-on-amazon-eks-using-terraform-a-complete-implementation-guide-1inc
+** interesting as it sets argo up with a custom domain
+*
 
 == Legacy notes - not sure if useful
 
@@ -127,12 +159,3 @@ aws eks create-access-entry \
 }
 ]
 }
-
-== Reference
-
-* https://blog.saintmalik.me/argocd-on-kubernetes-cluster/
-* https://registry.terraform.io/modules/squareops/argocd/kubernetes/latest
-** Module for creation
-* https://dev.to/aws-builders/gitops-with-argocd-on-amazon-eks-using-terraform-a-complete-implementation-guide-1inc
-** interesting as it sets argo up with a custom domain
-*

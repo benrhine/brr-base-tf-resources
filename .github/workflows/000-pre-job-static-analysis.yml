@@ -1,12 +1,624 @@
-name: 001 Test
+# https://medium.com/@lasisiabioduntowobola/integrating-checkov-security-scanning-into-github-actions-pipeline-c11374e391e1
+# https://www.checkov.io/4.Integrations/GitHub%20Actions.html
+
+# When using a matrix approach the jobs must be exactly the same. In this case this is not a good choice for
+# checkov as the warnings that need to be skipped are different per project.
+name: Terraform Static Analysis (TFLint, Trivy, Checkov)
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  security-events: write
+  contents: read
 
 jobs:
-  tflint-account-resources:
-    name: Run TFLint - (Project Account Resources)
+#  tflint-account-resources:
+#    name: Run TFLint - (Project Account Resources)
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v6
+#
+#      - name: Setup TFLint
+#        uses: terraform-linters/setup-tflint@v6
+#        with:
+#          tflint_version: latest
+#          cache: true
+#
+#      - name: Initialize TFLint
+#        run: tflint --init
+#        env:
+#          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+#          GITHUB_TOKEN: ${{ github.token }}
+#
+#      - name: Run TFLint
+#        run: tflint --recursive
+#        continue-on-error: true
+#  # Replacement for tfsec
+#  # https://medium.com/@fanjum524/office-hours-integrating-trivy-in-github-actions-ci-for-end-to-end-repository-security-devsecops-e7aa640eca51
+#  trivy-account-resources:
+#    name: Run Trivy - (Project Account Resources)
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v6
+#
+#      # https://github.com/aquasecurity/setup-trivy
+#      - name: Manual Trivy Setup
+#        uses: aquasecurity/setup-trivy@v0.2.5
+#        with:
+#          cache: true
+#          version: v0.68.2
+#
+#      # https://github.com/aquasecurity/trivy-action
+#      - name: Run Trivy IaC scan
+#        uses: aquasecurity/trivy-action@0.33.1
+#        continue-on-error: true
+#        with:
+#          skip-setup-trivy: true
+#          scan-type: config
+#          scan-ref: .
+#          ignore-unfixed: true
+#          format: sarif
+#          output: trivy.sarif
+#          severity: CRITICAL
+#          exit-code: 1
+#
+#      - name: Upload trivy SARIF
+#        uses: github/codeql-action/upload-sarif@v4
+#        if: success() || failure()
+#        with:
+#          sarif_file: trivy.sarif
+  checkov-001-setup-oidc-provider:
+    name: Run Checkov - (Project 001-setup-oidc-provider)
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v6
+
+      # https://github.com/bridgecrewio/checkov-action
+      - name: Test 001-setup-oidc-provider with Checkov
+        id: 001-setup-oidc-provider
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/001-once-per-account/001-setup-oidc-provider
+          framework: terraform
+          skip_check: CKV_GIT_4,CKV_AWS_274,CKV_TF_1
+          output_format: sarif
+          output_file_path: console,results.sarif
+
+      - name: Record job result
+        if: always()
+        run: |
+          echo "project=001-setup-oidc-provider" > result.txt
+          echo "status=${{ job.status }}" >> result.txt
+          echo "status=${{ job.status }}"
+
+      - name: Verify outputs exist
+        if: always()
+        run: |
+          test -f results.sarif || { echo "SARIF missing"; exit 1; }
+          test -f result.txt || { echo "Result file missing"; exit 1; }
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
+
+      # https://github.com/actions/upload-artifact
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: checkov-001-setup-oidc-provider
+          path: |
+            result.txt
+          retention-days: 3
+
+  checkov-002-setup-iam-roles:
+    name: Run Checkov - (Project 002-setup-iam-roles)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # https://github.com/bridgecrewio/checkov-action
+      - name: Test 002-setup-iam-roles with Checkov
+        id: 002-setup-iam-roles
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/001-once-per-account/002-setup-iam-roles
+          framework: terraform
+          skip_check: CKV_GIT_4,CKV_AWS_274,CKV_TF_1
+          output_format: sarif
+          output_file_path: console,results.sarif
+
+      - name: Record job result
+        if: always()
+        run: |
+          echo "project=002-setup-iam-roles" > result.txt
+          echo "status=${{ job.status }}" >> result.txt
+          echo "status=${{ job.status }}"
+
+      - name: Verify outputs exist
+        if: always()
+        run: |
+          test -f results.sarif || { echo "SARIF missing"; exit 1; }
+          test -f result.txt || { echo "Result file missing"; exit 1; }
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
+
+      # https://github.com/actions/upload-artifact
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: checkov-002-setup-iam-roles
+          path: |
+            result.txt
+          retention-days: 3
+
+  checkov-001-setup-s3-bucket:
+    name: Run Checkov - (Project 001-setup-s3-bucket)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # https://github.com/bridgecrewio/checkov-action
+      - name: Test 001-setup-s3-bucket with Checkov
+        id: 001-setup-s3-bucket
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/002-once-per-region/001-setup-s3-bucket
+          framework: terraform
+          skip_check: CKV_GIT_4,CKV_AWS_274,CKV_TF_1
+          output_format: sarif
+          output_file_path: console,results.sarif
+
+      - name: Record job result
+        if: always()
+        run: |
+          echo "project=001-setup-s3-bucket" > result.txt
+          echo "status=${{ job.status }}" >> result.txt
+          echo "status=${{ job.status }}"
+
+      - name: Verify outputs exist
+        if: always()
+        run: |
+          test -f results.sarif || { echo "SARIF missing"; exit 1; }
+          test -f result.txt || { echo "Result file missing"; exit 1; }
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
+
+      # https://github.com/actions/upload-artifact
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: checkov-001-setup-s3-bucket
+          path: |
+            result.txt
+          retention-days: 3
+
+#  tflint-ci-vpc:
+#    name: Run TFLint - (Project Account Resources)
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v6
+#
+#      - name: Setup TFLint
+#        uses: terraform-linters/setup-tflint@v6
+#        with:
+#          tflint_version: latest
+#          cache: true
+#
+#      - name: Initialize TFLint
+#        run: tflint --init
+#        env:
+#          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+#          GITHUB_TOKEN: ${{ github.token }}
+#
+#      - name: Run TFLint
+#        run: tflint --recursive
+#        continue-on-error: true
+#  # https://medium.com/@fanjum524/office-hours-integrating-trivy-in-github-actions-ci-for-end-to-end-repository-security-devsecops-e7aa640eca51
+#  trivy-ci-vpc:
+#    name: Run Trivy - (Project Account Resources)
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v6
+#
+#      # https://github.com/aquasecurity/setup-trivy
+#      - name: Manual Trivy Setup
+#        uses: aquasecurity/setup-trivy@v0.2.5
+#        with:
+#          cache: true
+#          version: v0.68.2
+#
+#      # https://github.com/aquasecurity/trivy-action
+#      - name: Run Trivy IaC scan
+#        uses: aquasecurity/trivy-action@0.33.1
+#        continue-on-error: true
+#        with:
+#          skip-setup-trivy: true
+#          scan-type: config
+#          scan-ref: .
+#          ignore-unfixed: true
+#          format: sarif
+#          output: trivy.sarif
+#          severity: CRITICAL
+#          exit-code: 1
+#
+#      - name: Upload trivy SARIF
+#        uses: github/codeql-action/upload-sarif@v4
+#        if: success() || failure()
+#        with:
+#          sarif_file: trivy.sarif
+  checkov-001-setup-vpc:
+    name: Run Checkov - (Project 001-setup-vpc)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Test 001-setup-vpc with Checkov
+        id: 001-setup-vpc
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/003-once-to-many-per-region/001-setup-vpc
+          framework: terraform
+          skip_check: CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_130
+          output_format: sarif
+          output_file_path: console,results.sarif
+
+      - name: Record job result
+        if: always()
+        run: |
+          echo "project=001-setup-vpc" > result.txt
+          echo "status=${{ job.status }}" >> result.txt
+          echo "status=${{ job.status }}"
+
+      - name: Verify outputs exist
+        if: always()
+        run: |
+          test -f results.sarif || { echo "SARIF missing"; exit 1; }
+          test -f result.txt || { echo "Result file missing"; exit 1; }
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
+
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: checkov-001-setup-vpc
+          path: |
+            result.txt
+          retention-days: 3
+
+#  tflint-ci-eks-cluster:
+#    name: Run TFLint - (Project CI Eks Cluster)
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v6
+#
+#      - name: Setup TFLint
+#        uses: terraform-linters/setup-tflint@v6
+#        with:
+#          tflint_version: latest
+#          cache: true
+#
+#      - name: Initialize TFLint
+#        run: tflint --init
+#        env:
+#          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+#          GITHUB_TOKEN: ${{ github.token }}
+#
+#      - name: Run TFLint
+#        run: tflint --recursive
+#        continue-on-error: true
+#    # https://medium.com/@fanjum524/office-hours-integrating-trivy-in-github-actions-ci-for-end-to-end-repository-security-devsecops-e7aa640eca51
+#  trivy-ci-eks-cluster:
+#    name: Run Trivy - (Project CI Eks Cluster)
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v6
+#
+#      # https://github.com/aquasecurity/setup-trivy
+#      - name: Manual Trivy Setup
+#        uses: aquasecurity/setup-trivy@v0.2.5
+#        with:
+#          cache: true
+#          version: v0.68.2
+#
+#      # https://github.com/aquasecurity/trivy-action
+#      - name: Run Trivy IaC scan
+#        uses: aquasecurity/trivy-action@0.33.1
+#        continue-on-error: true
+#        with:
+#          skip-setup-trivy: true
+#          scan-type: config
+#          scan-ref: .
+#          ignore-unfixed: true
+#          format: sarif
+#          output: trivy.sarif
+#          severity: CRITICAL
+#          exit-code: 1
+#
+#      - name: Upload trivy SARIF
+#        uses: github/codeql-action/upload-sarif@v4
+#        if: success() || failure()
+#        with:
+#          sarif_file: trivy.sarif
+  checkov-001-eks-std-irsa:
+    name: Run Checkov - (Project 001-eks-std-irsa)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Test 001-eks-std-irsa with Checkov
+        id: 001-eks-std-irsa
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/003-once-to-many-per-region/002-setup-eks/001-eks-std-irsa
+          framework: terraform
+          skip_check: CKV2_AWS_5,CKV2_AWS_11,CKV2_AWS_12,CKV_AWS_23,CKV_AWS_37,CKV_AWS_38,CKV_AWS_39,CKV_AWS_58,CKV_AWS_100,CKV_AWS_111,CKV_AWS_356,CKV_AWS_382
+          output_format: sarif
+          output_file_path: console,results.sarif
+
+      - name: Record job result
+        if: always()
+        run: |
+          echo "project=001-eks-std-irsa" > result.txt
+          echo "status=${{ job.status }}" >> result.txt
+          echo "status=${{ job.status }}"
+
+      - name: Verify outputs exist
+        if: always()
+        run: |
+          test -f results.sarif || { echo "SARIF missing"; exit 1; }
+          test -f result.txt || { echo "Result file missing"; exit 1; }
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
+
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: checkov-001-eks-std-irsa
+          path: |
+            result.txt
+          retention-days: 3
+
+#  tflint-ci-kube-argo:
+#    name: Run TFLint - (Project CI Kube Argo)
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v6
+#
+#      - name: Setup TFLint
+#        uses: terraform-linters/setup-tflint@v6
+#        with:
+#          tflint_version: latest
+#          cache: true
+#
+#      - name: Initialize TFLint
+#        run: tflint --init
+#        env:
+#          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+#          GITHUB_TOKEN: ${{ github.token }}
+#
+#      - name: Run TFLint
+#        run: tflint --recursive
+#        continue-on-error: true
+#  # https://medium.com/@fanjum524/office-hours-integrating-trivy-in-github-actions-ci-for-end-to-end-repository-security-devsecops-e7aa640eca51
+#  trivy-ci-kube-argo:
+#    name: Run Trivy - (Project CI Kube Argo)
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v6
+#
+#      # https://github.com/aquasecurity/setup-trivy
+#      - name: Manual Trivy Setup
+#        uses: aquasecurity/setup-trivy@v0.2.5
+#        with:
+#          cache: true
+#          version: v0.68.2
+#
+#      # https://github.com/aquasecurity/trivy-action
+#      - name: Run Trivy IaC scan
+#        uses: aquasecurity/trivy-action@0.33.1
+#        continue-on-error: true
+#        with:
+#          skip-setup-trivy: true
+#          scan-type: config
+#          scan-ref: .
+#          ignore-unfixed: true
+#          format: sarif
+#          output: trivy.txt
+#          severity: CRITICAL
+#          exit-code: 1
+#
+#      - name: Publish Trivy Output to Summary
+#        run: |
+#          if [[ -s trivy.txt ]]; then
+#            {
+#              echo "### Security Output"
+#              echo "<details><summary>Click to expand</summary>"
+#              echo ""
+#              echo '```terraform'
+#              cat trivy.txt
+#              echo '```'
+#              echo "</details>"
+#            } >> $GITHUB_STEP_SUMMARY
+#          fi
+  checkov-002-argo:
+    name: Run Checkov - (Project 002-argo)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Test 002-argo with Checkov
+        id: 002-argo
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: aws/tools/003-once-to-many-per-region/003-setup-kubernetes/002-argo
+          framework: terraform
+          output_format: sarif
+          output_file_path: console,results.sarif
+
+      - name: Record job result
+        if: always()
+        run: |
+          echo "project=002-argo" > result.txt
+          echo "status=${{ job.status }}" >> result.txt
+          echo "status=${{ job.status }}"
+
+      - name: Verify outputs exist
+        if: always()
+        run: |
+          test -f results.sarif || { echo "SARIF missing"; exit 1; }
+          test -f result.txt || { echo "Result file missing"; exit 1; }
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4
+
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
+
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: checkov-002-argo
+          path: |
+            result.txt
+          retention-days: 3
+
+#  aggregate-terraform-status:
+#    name: Aggregate Terraform Project Status
+#    runs-on: ubuntu-latest
+#    if: always()
+#
+#    needs:
+#      - checkov-account-resources
+#      - checkov-ci-vpc
+#      - checkov-ci-eks-cluster
+#      - checkov-ci-kube-argo
+#
+#    steps:
+#      - name: Download all Checkov result artifacts
+#        uses: actions/download-artifact@v6
+#        with:
+#          path: artifacts
+#
+#      - name: Generate consolidated status file
+#        run: |
+#          echo "{" > terraform-status.json
+#
+#          first=true
+#          for result in artifacts/**/result.txt; do
+#            project=$(grep '^project=' "$result" | cut -d= -f2)
+#            status=$(grep '^status=' "$result" | cut -d= -f2)
+#
+#            if [ "$first" = true ]; then
+#              first=false
+#            else
+#              echo "," >> terraform-status.json
+#            fi
+#
+#            echo "  \"$project\": \"$status\"" >> terraform-status.json
+#          done
+#
+#          echo "}" >> terraform-status.json
+#
+#          echo "=== Consolidated Terraform Status ==="
+#          cat terraform-status.json
+#
+#      - name: Upload consolidated status artifact
+#        uses: actions/upload-artifact@v6
+#        with:
+#          name: terraform-status
+#          path: terraform-status.json
+#          retention-days: 7

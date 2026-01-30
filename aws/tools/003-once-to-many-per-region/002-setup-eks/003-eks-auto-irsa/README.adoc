@@ -3,6 +3,9 @@
 [NOTE]
 The cluster currently deploys successfully as of 20260129 @ 1230. However, no node groups start up (and im pretty sure this is by design). This may require more work before it is usable. Terminal is authorized the same as project 001, and 002.
 
+[TIP]
+This project has already been configured for `us-east-2` and `us-west-2` to demonstrate multi region layout.
+
 The purpose and usage of auto mode is still a bit unclear to me. I understand that this is supposed to help with the automatic scaling of resources as a project grows, however, during setup it seems to cause some issues. Those issues being that while the cluster will come up there is no associated node group. The node group creation is left to "_automatically_" happen when things are deployed to the cluster but this results in extremely long creation time of resources and many times the node group will fail to join the cluster.
 
 This leaves me questioning if the is the correct setup and what the true point of auto mode is?

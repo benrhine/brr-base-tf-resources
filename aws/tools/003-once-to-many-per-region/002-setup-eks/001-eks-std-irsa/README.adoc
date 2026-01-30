@@ -3,6 +3,9 @@
 [NOTE]
 Both the cluster and the node group currently deploy successfully as of 20260129 @ 1230. I have also been successful in deploying ArgoCD to this cluster
 
+[TIP]
+This project has already been configured for `us-east-2` and `us-west-2` to demonstrate multi region layout.
+
 This project should only be executed using the CI environment and will build a new Aws EKS cluster with correctly attached roles for access from your SSO role, the CI role, or the generated EKS role.
 
 == How do deploy?

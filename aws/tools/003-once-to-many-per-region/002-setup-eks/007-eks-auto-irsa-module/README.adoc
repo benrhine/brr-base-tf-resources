@@ -1,0 +1,7 @@
+= 0067- Eks auto mode deployment with IRSA Authentication using HashiCorp module
+
+[WARNING]
+Nothing in this module has been tested and `terraform init` fails. I dont know why.
+
+[TIP]
+This project has already been configured for `us-east-2` and `us-west-2` to demonstrate multi region layout.

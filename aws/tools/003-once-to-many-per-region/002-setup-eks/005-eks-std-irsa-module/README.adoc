@@ -3,6 +3,9 @@
 [NOTE]
 Both the cluster and the node group currently deploy successfully as of 20260129 @ 1230. However, pod identity is not fully configured
 
+[TIP]
+This project has already been configured for `us-east-2` and `us-west-2` to demonstrate multi region layout.
+
 == Reference
 
 * https://github.com/terraform-aws-modules/terraform-aws-eks
