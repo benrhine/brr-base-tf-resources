@@ -24,6 +24,7 @@ on:
         required: false
         type: choice
         options:
+          - all
           - us-east-2
           - us-west-2
         default: us-east-2
@@ -191,13 +192,24 @@ jobs:
           role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
 
+      - name: Copy ci backend into terraform
+        run: |
+          rm -f terraform.tf
+          cp ../backend/terraform.tf terraform.tf
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3.1.2
         with:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/us-east-2/terraform.tfstate \
+            -backend-config=region=${{ github.event.inputs.aws-region }} \
+            -backend-config=encrypt=true \
+            -backend-config=use_lockfile=true
 
       - name: Plan terraform Changes
         env:
@@ -236,13 +248,24 @@ jobs:
           role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
 
+      - name: Copy ci backend into terraform
+        run: |
+          rm -f terraform.tf
+          cp ../backend/terraform.tf terraform.tf
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3.1.2
         with:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/us-east-2/terraform.tfstate \
+            -backend-config=region=${{ github.event.inputs.aws-region }} \
+            -backend-config=encrypt=true \
+            -backend-config=use_lockfile=true
 
       - name: Plan terraform Changes
         env:
