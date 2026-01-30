@@ -87,7 +87,7 @@ jobs:
 
       # https://github.com/bridgecrewio/checkov-action
       - name: Test 001-setup-oidc-provider with Checkov
-        id: 001-setup-oidc-provider
+        id: _001-setup-oidc-provider
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/001-once-per-account/001-setup-oidc-provider
@@ -141,7 +141,7 @@ jobs:
 
       # https://github.com/bridgecrewio/checkov-action
       - name: Test 002-setup-iam-roles with Checkov
-        id: 002-setup-iam-roles
+        id: _002-setup-iam-roles
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/001-once-per-account/002-setup-iam-roles
@@ -195,7 +195,7 @@ jobs:
 
       # https://github.com/bridgecrewio/checkov-action
       - name: Test 001-setup-s3-bucket with Checkov
-        id: 001-setup-s3-bucket
+        id: _001-setup-s3-bucket
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/002-once-per-region/001-setup-s3-bucket
@@ -306,7 +306,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Test 001-setup-vpc with Checkov
-        id: 001-setup-vpc
+        id: _001-setup-vpc
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/003-once-to-many-per-region/001-setup-vpc
@@ -416,7 +416,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Test 001-eks-std-irsa with Checkov
-        id: 001-eks-std-irsa
+        id: _001-eks-std-irsa
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/003-once-to-many-per-region/002-setup-eks/001-eks-std-irsa
@@ -534,7 +534,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Test 002-argo with Checkov
-        id: 002-argo
+        id: _002-argo
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: aws/tools/003-once-to-many-per-region/003-setup-kubernetes/002-argo
