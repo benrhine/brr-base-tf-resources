@@ -213,7 +213,7 @@ jobs:
 
       - name: test expression
         run: |
-          echo "test - ${{ steps.postfix.outputs.value }}"
+          echo "test - ${{ needs.validate-input.outputs.project_postfix }}"
           echo "test - $AWS_REGION"
 
 #      - name: Configure AWS Credentials
