@@ -31,12 +31,12 @@ on:
         type: boolean
         default: false
       custom-state-path:
-        description: "Are you using a known project postfix?"
+        description: "Are you using a custom S3 state path (project postfix)? Enter value in following field if true."
         required: true
         type: boolean
         default: false
       custom-postfix:
-        description: "Unique random value applied to the end of resources. This will only be used if the custom state path is true. Only use this if you deeply understand what you are doing."
+        description: "A unique random value applied to the end of resources. This will only be used if the custom state path is true. Only use this if you deeply understand what you are doing."
         required: false
       vpc-cidr-block:
         description: "VPC Cidr block"
