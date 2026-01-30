@@ -29,22 +29,14 @@ on:
           - us-west-2
         default: us-east-2
       environment:
-        description: "Target Environment"
+        description: "Target Environment and Region"
         required: false
         type: choice
         options:
-          - dev
-          - test
-          - staging
-          - prod
-      environment-2:
-        description: "Target Environment"
-        required: false
-        type: choice
-        options:
-          - dev_us-east-2
-          - dev_us-west-2
-          - test
+          - dev/us-east-2
+          - dev/us-west-2
+          - test/us-east-2
+          - test/us-west-2
           - staging
           - prod
       environment-prefix:
@@ -86,15 +78,32 @@ permissions:
   id-token: write
 
 env:
-  PROJECT_POSTFIX: ${{
-    contains(inputs.environment-2, 'us-east-2') && 'xi7egjwf' ||
-    contains(inputs.environment-2, 'us-west-2') && 'vfqysx7t' ||
+  PROJECT_POSTFIX: ${{ steps.postfix.outputs.value }}
+  AWS_REGION: ${{
+    contains(inputs.environment, 'us-east-2') && 'us-east-2' ||
+    contains(inputs.environment, 'us-west-2') && 'us-west-2' ||
     'unknown'
     }}
 
 jobs:
+  validate-input:
+    runs-on: ubuntu-latest
+    outputs:
+      project_postfix: ${{ steps.postfix.outputs.value }}
 
-  verify:
+      steps:
+        - name: Resolve project postfix
+          id: postfix
+          run: |
+            env="${{ inputs.environment }}"
+            case "$env" in
+              *us-east-2) v=xi7egjwf ;;
+              *us-west-2) v=vfqysx7t ;;
+              *) echo "❌ Unsupported environment: $env"; exit 1 ;;
+            esac
+            echo "value=$v" >> "$GITHUB_OUTPUT"
+
+  verify-linting:
     runs-on: ubuntu-latest
     outputs:
       checkov_vpc_status: ${{ steps.checkov-result.outputs.status }}
@@ -204,6 +213,7 @@ jobs:
       - name: test expression
         run: |
           echo "test - $PROJECT_POSTFIX"
+          echo "test - $AWS_REGION"
 
 #      - name: Configure AWS Credentials
 #        uses: aws-actions/configure-aws-credentials@v5.0.0
