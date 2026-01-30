@@ -121,6 +121,7 @@ jobs:
         id: env
         run: |
           env="${{ inputs.environment }}"
+          echo "DEBUG: env='${e}'"
           case "$env" in
             dev_*) v=dev ;;
             test_*) v=test ;;
