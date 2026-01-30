@@ -198,11 +198,12 @@ jobs:
         working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ github.event.inputs.aws-region }}
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
       - name: test expression
         run: |
           echo "test - $PROJECT_POSTFIX"
-#      - name: Checkout repository
-#        uses: actions/checkout@v5
 
 #      - name: Configure AWS Credentials
 #        uses: aws-actions/configure-aws-credentials@v5.0.0
