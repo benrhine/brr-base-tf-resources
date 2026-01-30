@@ -92,47 +92,40 @@ jobs:
     outputs:
       project_postfix: ${{ steps.postfix.outputs.value }}
       aws_region: ${{ steps.region.outputs.value }}
-      environment: ${{ steps.environment.outputs.valud }}
+      environment: ${{ steps.environment.outputs.value }}
 
     steps:
       - name: Resolve project postfix
         id: postfix
         run: |
-          env="${{ inputs.environment }}"
-          case "$env" in
+          input_env="${{ inputs.environment }}"
+          case "$input_env" in
             *us-east-2) v=xi7egjwf ;;
             *us-west-2) v=vfqysx7t ;;
-            *) echo "❌ Non-existent postfix: $env"; exit 1 ;;
+            *) echo "❌ Non-existent postfix: $input_env"; exit 1 ;;
           esac
           echo "value=$v" >> "$GITHUB_OUTPUT"
 
       - name: Resolve region
         id: region
         run: |
-          env="${{ inputs.environment }}"
-          case "$env" in
+          input_env="${{ inputs.environment }}"
+          case "$input_env" in
             *us-east-2) v=us-east-2 ;;
             *us-west-2) v=us-west-2 ;;
-            *) echo "❌ Unsupported region: $env"; exit 1 ;;
+            *) echo "❌ Unsupported region: $input_env"; exit 1 ;;
           esac
           echo "value=$v" >> "$GITHUB_OUTPUT"
 
       - name: Resolve environment
         id: environment
         run: |
-          input_env="${{ inputs.environment }}"
-
-          echo "DEBUG: input_env='${input_env}'"
-      
+          input_env="${{ inputs.environment }}"      
           case "$input_env" in
             dev/*)  v=dev ;;
             test/*) v=test ;;
-            *)
-            echo "❌ Unsupported environment: $input_env"
-            exit 1
-            ;;
+            *) echo "❌ Unsupported environment: $input_env" exit 1 ;;
           esac
-      
           echo "value=$v" >> "$GITHUB_OUTPUT"
 
   verify:
