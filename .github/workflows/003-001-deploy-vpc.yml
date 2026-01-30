@@ -87,8 +87,8 @@ permissions:
 
 env:
   PROJECT_POSTFIX: ${{
-    contains(inputs.environment-2, 'us-east-2') && 'x' ||
-    contains(inputs.environment-2, 'us-west-2') && 'y' ||
+    contains(inputs.environment-2, 'us-east-2') && 'xi7egjwf' ||
+    contains(inputs.environment-2, 'us-west-2') && 'vfqysx7t' ||
     'unknown'
     }}
 
