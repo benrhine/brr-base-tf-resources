@@ -78,7 +78,7 @@ permissions:
   id-token: write
 
 env:
-  PROJECT_POSTFIX: ${{ steps.postfix.outputs.value }}
+#  PROJECT_POSTFIX: ${{ steps.postfix.outputs.value }}
   AWS_REGION: ${{
     contains(inputs.environment, 'us-east-2') && 'us-east-2' ||
     contains(inputs.environment, 'us-west-2') && 'us-west-2' ||
@@ -87,26 +87,24 @@ env:
 
 jobs:
 
-#  validate-input:
-#    runs-on: ubuntu-latest
-#    outputs:
-#      project_postfix: ${{ steps.postfix.outputs.value }}
-#
-#    steps:
-#      - name: Resolve project postfix
-#        id: postfix
-#        run: |
-#          echo "test"
-#        run: |
-#          env="${{ inputs.environment }}"
-#          case "$env" in
-#            *us-east-2) v=xi7egjwf ;;
-#            *us-west-2) v=vfqysx7t ;;
-#            *) echo "❌ Unsupported environment: $env"; exit 1 ;;
-#          esac
-#          echo "value=$v" >> "$GITHUB_OUTPUT"
+  validate-input:
+    runs-on: ubuntu-latest
+    outputs:
+      project_postfix: ${{ steps.postfix.outputs.value }}
 
-  verify-linting:
+    steps:
+      - name: Resolve project postfix
+        id: postfix
+        run: |
+          env="${{ inputs.environment }}"
+          case "$env" in
+            *us-east-2) v=xi7egjwf ;;
+            *us-west-2) v=vfqysx7t ;;
+            *) echo "❌ Unsupported environment: $env"; exit 1 ;;
+          esac
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+
+  verify:
     runs-on: ubuntu-latest
     outputs:
       checkov_vpc_status: ${{ steps.checkov-result.outputs.status }}
@@ -203,7 +201,7 @@ jobs:
 #    if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' && inputs.aws-region == 'us-east-2' }}
     if: ${{ inputs.aws-region == 'us-east-2' }}
 
-    needs: verify
+    needs: [validate-input, verify]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -215,7 +213,7 @@ jobs:
 
       - name: test expression
         run: |
-          echo "test - $PROJECT_POSTFIX"
+          echo "test - ${{ steps.postfix.outputs.value }}"
           echo "test - $AWS_REGION"
 
 #      - name: Configure AWS Credentials
