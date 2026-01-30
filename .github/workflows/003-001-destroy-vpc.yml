@@ -14,7 +14,11 @@ on:
       project-postfix:
         description: "Random string applied to the end of resource names for uniqueness - should match S3 bucket"
         required: true
-        default: "xi7egjwf"
+        type: choice
+        options:
+          - xi7egjwf
+          - vfqysx7t
+        default: xi7egjwf
       aws-region:
         description: "Which region is being deployed to"
         required: false
