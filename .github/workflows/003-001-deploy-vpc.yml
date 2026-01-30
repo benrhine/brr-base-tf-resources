@@ -42,8 +42,8 @@ on:
         required: false
         type: choice
         options:
-          - dev_us-east-2_xi7egjwf
-          - dev_us-west-2_vfqysx7t
+          - dev_us-east-2
+          - dev_us-west-2
           - test
           - staging
           - prod
@@ -84,6 +84,13 @@ on:
 permissions:
   actions: write
   id-token: write
+
+env:
+  PROJECT_POSTFIX: ${{
+    contains(inputs.environment-2, 'us-east-2') && 'x' ||
+    contains(inputs.environment-2, 'us-west-2') && 'y' ||
+    'unknown'
+    }}
 
 jobs:
 
@@ -191,51 +198,54 @@ jobs:
         working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ github.event.inputs.aws-region }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
-        with:
-          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
-          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
-          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
-          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
-
-      - name: Copy ci backend into terraform
+      - name: test expression
         run: |
-          rm -f terraform.tf
-          cp ../backend/terraform.tf terraform.tf
+          echo "test - $PROJECT_POSTFIX"
+#      - name: Checkout repository
+#        uses: actions/checkout@v5
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3.1.2
-        with:
-          terraform_version: 'latest'
-
-      - name: Initialize Terraform
-        run: |
-          terraform init \
-            -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ github.event.inputs.aws-region }}/terraform.tfstate \
-            -backend-config=region=${{ github.event.inputs.aws-region }} \
-            -backend-config=encrypt=true \
-            -backend-config=use_lockfile=true
-
-      - name: Plan terraform Changes
-        env:
-          TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
-          TF_VAR_environment: ${{ github.event.inputs.environment }}
-          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-        run: terraform plan
-
-      - name: Plan terraform Changes
-        env:
-          TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
-          TF_VAR_environment: ${{ github.event.inputs.environment }}
-          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-        run: terraform apply -auto-approve
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v5.0.0
+#        with:
+#          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
+#          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
+#          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
+#          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
+#
+#      - name: Copy ci backend into terraform
+#        run: |
+#          rm -f terraform.tf
+#          cp ../backend/terraform.tf terraform.tf
+#
+#      - name: Set up Terraform
+#        uses: hashicorp/setup-terraform@v3.1.2
+#        with:
+#          terraform_version: 'latest'
+#
+#      - name: Initialize Terraform
+#        run: |
+#          terraform init \
+#            -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
+#            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ github.event.inputs.aws-region }}/terraform.tfstate \
+#            -backend-config=region=${{ github.event.inputs.aws-region }} \
+#            -backend-config=encrypt=true \
+#            -backend-config=use_lockfile=true
+#
+#      - name: Plan terraform Changes
+#        env:
+#          TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
+#          TF_VAR_environment: ${{ github.event.inputs.environment }}
+#          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+#          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+#        run: terraform plan
+#
+#      - name: Plan terraform Changes
+#        env:
+#          TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
+#          TF_VAR_environment: ${{ github.event.inputs.environment }}
+#          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+#          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+#        run: terraform apply -auto-approve
 
   terraform-deploy-us-west-2:
 #    if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' && inputs.aws-region == 'us-west-2' }}
