@@ -77,13 +77,13 @@ permissions:
   actions: write
   id-token: write
 
-env:
-#  PROJECT_POSTFIX: ${{ steps.postfix.outputs.value }}
-  AWS_REGION: ${{
-    contains(inputs.environment, 'us-east-2') && 'us-east-2' ||
-    contains(inputs.environment, 'us-west-2') && 'us-west-2' ||
-    'unknown'
-    }}
+#env:
+##  PROJECT_POSTFIX: ${{ steps.postfix.outputs.value }}
+#  AWS_REGION: ${{
+#    contains(inputs.environment, 'us-east-2') && 'us-east-2' ||
+#    contains(inputs.environment, 'us-west-2') && 'us-west-2' ||
+#    'unknown'
+#    }}
 
 jobs:
 
@@ -92,7 +92,7 @@ jobs:
     outputs:
       project_postfix: ${{ steps.postfix.outputs.value }}
       aws_region: ${{ steps.region.outputs.value }}
-      env: ${{ steps.env.outputs.valud }}
+      environment: ${{ steps.environment.outputs.valud }}
 
     steps:
       - name: Resolve project postfix
@@ -118,7 +118,7 @@ jobs:
           echo "value=$v" >> "$GITHUB_OUTPUT"
 
       - name: Resolve environment
-        id: env
+        id: environment
         run: |
           env="${{ inputs.environment }}"
           echo "DEBUG: env='${e}'"
@@ -240,7 +240,7 @@ jobs:
         run: |
           echo "test - ${{ needs.validate-input.outputs.project_postfix }}"
           echo "test - ${{ needs.validate-input.outputs.aws_region}}"
-          echo "test - ${{ needs.validate-input.outputs.env }}"
+          echo "test - ${{ needs.validate-input.outputs.environment }}"
 
 #      - name: Configure AWS Credentials
 #        uses: aws-actions/configure-aws-credentials@v5.0.0
