@@ -120,13 +120,19 @@ jobs:
       - name: Resolve environment
         id: environment
         run: |
-          env="${{ inputs.environment }}"
-          echo "DEBUG: env='${e}'"
-          case "$env" in
-            dev_*) v=dev ;;
-            test_*) v=test ;;
-            *) echo "❌ Unsupported environment: $env"; exit 1 ;;
+          input_env="${{ inputs.environment }}"
+
+          echo "DEBUG: input_env='${input_env}'"
+      
+          case "$input_env" in
+            dev/*)  v=dev ;;
+            test/*) v=test ;;
+            *)
+            echo "❌ Unsupported environment: $input_env"
+            exit 1
+            ;;
           esac
+      
           echo "value=$v" >> "$GITHUB_OUTPUT"
 
   verify:
