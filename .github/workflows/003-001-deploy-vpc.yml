@@ -122,8 +122,8 @@ jobs:
         run: |
           env="${{ inputs.environment }}"
           case "$env" in
-            *dev) v=dev ;;
-            *test) v=test ;;
+            dev_*) v=dev ;;
+            test_*) v=test ;;
             *) echo "❌ Unsupported environment: $env"; exit 1 ;;
           esac
           echo "value=$v" >> "$GITHUB_OUTPUT"
