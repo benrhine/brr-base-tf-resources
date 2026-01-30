@@ -87,16 +87,16 @@ env:
 
 jobs:
 
-  validate-input:
-    runs-on: ubuntu-latest
-    outputs:
-      project_postfix: ${{ steps.postfix.outputs.value }}
-
-    steps:
-      - name: Resolve project postfix
-        id: postfix
-        run: |
-          echo "test"
+#  validate-input:
+#    runs-on: ubuntu-latest
+#    outputs:
+#      project_postfix: ${{ steps.postfix.outputs.value }}
+#
+#    steps:
+#      - name: Resolve project postfix
+#        id: postfix
+#        run: |
+#          echo "test"
 #        run: |
 #          env="${{ inputs.environment }}"
 #          case "$env" in
