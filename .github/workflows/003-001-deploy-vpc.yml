@@ -37,6 +37,16 @@ on:
           - test
           - staging
           - prod
+      environment-2:
+        description: "Target Environment"
+        required: false
+        type: choice
+        options:
+          - dev_us-east-2_xi7egjwf
+          - dev_us-west-2_vfqysx7t
+          - test
+          - staging
+          - prod
       environment-prefix:
         description: "Should resources be prefixed with environment?"
         required: true
@@ -178,7 +188,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/us-east-2
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ github.event.inputs.aws-region }}
 
     steps:
       - name: Checkout repository
@@ -206,7 +216,7 @@ jobs:
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/us-east-2/terraform.tfstate \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ github.event.inputs.aws-region }}/terraform.tfstate \
             -backend-config=region=${{ github.event.inputs.aws-region }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true
@@ -234,7 +244,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/us-west-2
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ github.event.inputs.aws-region }}
 
     steps:
       - name: Checkout repository
@@ -262,7 +272,7 @@ jobs:
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/us-east-2/terraform.tfstate \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ github.event.inputs.aws-region }}/terraform.tfstate \
             -backend-config=region=${{ github.event.inputs.aws-region }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true

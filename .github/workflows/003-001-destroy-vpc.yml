@@ -106,7 +106,13 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ github.event.inputs.aws-region }}/terraform.tfstate \
+            -backend-config=region=${{ github.event.inputs.aws-region }} \
+            -backend-config=encrypt=true \
+            -backend-config=use_lockfile=true
 
       - name: Plan destroy terraform Changes
         env:
@@ -154,7 +160,13 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ github.event.inputs.aws-region }}/terraform.tfstate \
+            -backend-config=region=${{ github.event.inputs.aws-region }} \
+            -backend-config=encrypt=true \
+            -backend-config=use_lockfile=true
 
       - name: Plan destroy terraform Changes
         env:
