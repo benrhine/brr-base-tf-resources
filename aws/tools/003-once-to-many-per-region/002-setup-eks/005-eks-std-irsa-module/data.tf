@@ -45,11 +45,11 @@ data "aws_subnets" "private" {
 
 data "aws_iam_policy_document" "eks_all_permissions" {
   statement {
-    actions   = [
+    actions = [
       "eks:*"
     ]
     resources = ["*"]
-    effect = "Allow"
+    effect    = "Allow"
   }
 }
 

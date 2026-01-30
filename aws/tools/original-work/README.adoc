@@ -1,0 +1,3 @@
+= Original Work
+
+Projects under this folder are the original attempts at this project and are in various states of working order. These projects/directories are left in case I need to reference previous work quickly without digging though git commits in my personal repos.

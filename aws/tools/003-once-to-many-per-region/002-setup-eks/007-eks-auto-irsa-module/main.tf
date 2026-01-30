@@ -181,44 +181,6 @@ locals {
   private_subnet_ids      = sort(data.aws_subnets.private.ids)
 }
 
-########################################################################################################################
-# Create Eks cluster
-########################################################################################################################
-# resource "aws_eks_cluster" "eks_cluster" {
-#   name                    = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
-#   role_arn                = aws_iam_role.eks_role.arn
-#   vpc_config {
-#     subnet_ids            = local.private_subnet_ids
-#     security_group_ids    = [aws_security_group.eks_cluster_sg.id]
-#   }
-#
-#   # Enable modern authentication mode
-#   access_config {
-#     authentication_mode   = var.cluster_auth_mode
-#   }
-#
-#   lifecycle {
-#     precondition {
-#       condition           = length(local.private_subnet_ids) >= 2
-#       error_message       = "EKS requires at least two subnets in different AZs"
-#     }
-#   }
-#
-#   depends_on = [
-#     aws_iam_role_policy_attachment.eks_policy
-#   ]
-#
-#   tags = {
-#     environment           = var.environment
-#     terraform             = "true"
-#     org                   = var.org_name_abv
-#     team                  = var.team_name
-#     create_date           = timestamp()
-#     cluster_name          = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
-#     name                  = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
-#   }
-# }
-
 # https://github.com/terraform-aws-modules/terraform-aws-eks
 module "eks_cluster" {
   source  = "terraform-aws-modules/eks/aws"
@@ -230,16 +192,16 @@ module "eks_cluster" {
   # Enable modern authentication mode
   authentication_mode   = var.cluster_auth_mode
 
-  addons = {
-    coredns                = {}
-    eks-pod-identity-agent = {
-      before_compute = true
-    }
-    kube-proxy             = {}
-    vpc-cni                = {
-      before_compute = true
-    }
-  }
+  # addons = {
+  #   coredns                = {}
+  #   eks-pod-identity-agent = {
+  #     before_compute = true
+  #   }
+  #   kube-proxy             = {}
+  #   vpc-cni                = {
+  #     before_compute = true
+  #   }
+  # }
 
   # Optional
   endpoint_public_access = true
@@ -255,19 +217,6 @@ module "eks_cluster" {
   vpc_id     = "vpc-060fad6d748d9b3af"
   subnet_ids = local.private_subnet_ids
 
-  # EKS Managed Node Group(s)
-  eks_managed_node_groups = {
-    example = {
-      # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
-      ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = [var.environment_instance_type]
-
-      min_size     = var.cluster_ng_min_size
-      max_size     = var.cluster_ng_max_size
-      desired_size = var.cluster_ng_desired_size
-    }
-  }
-
   tags = {
     environment           = var.environment
     terraform             = "true"
@@ -278,6 +227,27 @@ module "eks_cluster" {
     name                  = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
   }
 }
+
+# module "eks_auto_custom_node_pools" {
+#   source = "../.."
+#
+#   name                   = "${local.name}-custom"
+#   kubernetes_version     = local.kubernetes_version
+#   endpoint_public_access = true
+#
+#   enable_cluster_creator_admin_permissions = true
+#
+#   # Create just the IAM resources for EKS Auto Mode for use with custom node pools
+#   create_auto_mode_iam_resources = true
+#   compute_config = {
+#     enabled = true
+#   }
+#
+#   vpc_id     = module.vpc.vpc_id
+#   subnet_ids = module.vpc.private_subnets
+#
+#   tags = local.tags
+# }
 
 ########################################################################################################################
 # Create cluster access entries

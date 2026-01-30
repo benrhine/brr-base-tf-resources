@@ -173,6 +173,20 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+# Added for pod identity
+resource "aws_iam_role" "pod_role" {
+  name               = "eks-pod-identity-example"
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+}
+
+# LOOK HERE THIS IS SUPPOSEDLY THE MAGIC SAUCE
+# resource "aws_eks_pod_identity_association" "association" {
+#   cluster_name = aws_eks_cluster.example.name
+#   namespace = var.namespace
+#   service_account = var.service_account_name
+#   role_arn = aws_iam_role.pod_role.arn
+# }
+
 ########################################################################################################################
 # Collect vpc ip's for Eks cluster
 ########################################################################################################################
@@ -217,6 +231,11 @@ resource "aws_eks_cluster" "eks_cluster" {
     cluster_name = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
     name         = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
   }
+}
+
+resource "aws_eks_addon" "example" {
+  cluster_name = aws_eks_cluster.eks_cluster.name
+  addon_name   = "eks-pod-identity-agent"
 }
 
 ########################################################################################################################
@@ -333,72 +352,5 @@ resource "aws_eks_access_policy_association" "sso_role_access_policy" {
   depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
 }
 
-
-#####################################################################################
-# Attempt 2
-#####################################################################################
-# module "eks" {
-#   source  = "terraform-aws-modules/eks/aws"
-#   version = "~> 21.11"
-#
-#   name    = "example-2-${random_string.suffix.result}"
-#   kubernetes_version = "1.34"
-#
-#   iam_role_arn = aws_iam_role.eks_role.arn
-#
-#   # Optional
-#   endpoint_public_access = true
-#
-#   # Optional: Adds the current caller identity as an administrator via cluster access entry
-#   enable_cluster_creator_admin_permissions = true
-#
-#   addons = {
-#     coredns                = {}
-#     eks-pod-identity-agent = {}
-#     kube-proxy             = {}
-#     vpc-cni                = {}
-#   }
-#
-#   vpc_id     = data.aws_vpc.custom.id
-#   subnet_ids = local.private_subnet_ids
-#
-#   eks_managed_node_groups = {
-#     example = {
-#       instance_types = ["t3.small"]
-#       min_size       = 1
-#       max_size       = 2
-#       desired_size   = 1
-#       subnet_ids      = local.private_subnet_ids
-#       vpc_security_group_ids = [aws_security_group.eks_cluster_sg.id]
-#       iam_role_arn = aws_iam_role.eks_node_group_role.arn
-#       # remote_access = {
-#       #   ec2_ssh_key = "brr-test"  # Replace with your key pair name
-#       # }
-#     }
-#   }
-#
-#   access_entries = {
-#     # One access entry with a policy associated
-#     example = {
-#       kubernetes_groups = []
-#       principal_arn     = aws_iam_role.eks_role.arn
-#
-#       policy_associations = {
-#         example = {
-#           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
-#           access_scope = {
-#             namespaces = ["default"]
-#             type       = "namespace"
-#           }
-#         }
-#       }
-#     }
-#   }
-#
-#   tags = {
-#     environment = "dev"
-#     terraform   = "true"
-#   }
-# }
 
 

@@ -66,7 +66,13 @@ variable "git_role_duration" {
 variable "git_aws_region" {
   description = "Aws Region for GitHub to authenticate into"
   type        = string
-  default     = "us-west-2"
+  default     = "us-east-2"
+}
+
+variable "aws_region" {
+  description = "Aws Region"
+  type        = string
+  default     = "us-east-2"
 }
 
 # Terraform: ===================================================================

@@ -197,6 +197,30 @@ resource "aws_eks_cluster" "eks_cluster" {
     authentication_mode = var.cluster_auth_mode
   }
 
+  # This is required when auto mode is enabled
+  bootstrap_self_managed_addons = false
+
+  # The "Easy Button"
+  compute_config {
+    enabled       = true
+    node_pools    = ["general-purpose", "system"]
+    node_role_arn = aws_iam_role.eks_node_group_role.arn
+  }
+
+  # Native Networking
+  kubernetes_network_config {
+    elastic_load_balancing {
+      enabled = true
+    }
+  }
+
+  # Native Storage
+  storage_config {
+    block_storage {
+      enabled = true
+    }
+  }
+
   lifecycle {
     precondition {
       condition     = length(local.private_subnet_ids) >= 2
@@ -219,44 +243,13 @@ resource "aws_eks_cluster" "eks_cluster" {
   }
 }
 
-########################################################################################################################
-# Create Eks Node Group
-########################################################################################################################
-resource "aws_eks_node_group" "eks_node_group" {
-  cluster_name    = aws_eks_cluster.eks_cluster.name
-  node_group_name = "${local.resource_prefix}-node-group-${var.project_postfix}"
-  node_role_arn   = aws_iam_role.eks_node_group_role.arn
-  subnet_ids      = local.private_subnet_ids
-  scaling_config {
-    desired_size = var.cluster_ng_desired_size
-    max_size     = var.cluster_ng_max_size
-    min_size     = var.cluster_ng_min_size
-  }
+# ChatGpt implied this was necessary, however it has not seemed to make a difference
+resource "aws_eks_addon" "vpc-cni" {
+  cluster_name = aws_eks_cluster.eks_cluster.name
+  addon_name   = "vpc-cni"
 
-  instance_types = [var.environment_instance_type]
-
-  # remote_access {
-  #   ec2_ssh_key           = var.cluster_ng_remote_access_key  # Replace with your key pair name
-  # }
-
-  update_config {
-    max_unavailable = var.cluster_ng_max_unavailable
-  }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.eks_node_group_policy,
-    aws_iam_role_policy_attachment.eks_cni_policy,
-    aws_iam_role_policy_attachment.eks_ecr_policy
-  ]
-
-  tags = {
-    environment  = var.environment
-    terraform    = "true"
-    org          = var.org_name_abv
-    team         = var.team_name
-    create_date  = timestamp()
-    cluster_name = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
-    name         = "${local.resource_prefix}-node-group-${var.project_postfix}"
+  lifecycle {
+    ignore_changes = all
   }
 }
 

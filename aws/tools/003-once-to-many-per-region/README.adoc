@@ -1,0 +1,66 @@
+= 003 - Once to Many Per Region
+
+All projects located in this folder are considered *Regional* in Aws and are expected to be executed once, to many times per region. Each project is labeled with a number indicating the step order in which it should be executed.
+
+[CAUTION]
+While projects in this folder _can be_ executed multiple times per region you will need to pay careful attention to the Terraform/OpenTofu state. In order to successfully achieve multiple deployments these projects will need to be executed using a CI framework with special attention paid to the backend block in the `terraform.tf` file, otherwise you will end up overwriting the existing state of the previous deployment and causing issues.
+
+[TIP]
+This is an example of where OpenTofu out shines Terraform as it allows variables to be used in the `backend` block making the configuration required for multiple deployments significantly easier.
+
+== 001-setup-vpc
+
+
+== 002-setup-eks
+
+This directory holds multiple variants of different ways in which EKS can be configured.
+
+[NOTE]
+All projects in this folder are configured using IRSA to ensure that you have access from the terminal upon execution completion. This configuration is done regardless of if pod identity is enabled as I have yet to fully understand how pod identity works and pod identity does not seem to be able to grant cluster level access, only individual pod access.
+
+=== Roles with access
+
+The roles listed here will have full cluster access after any of the following projects are executed.
+
+* `AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b`
+** Your SSO role
+* `github_oidc_ci_assume_role_<PROJECT-POSTFIX>`
+** CI role used to deploy code
+* `<PROJECT-NAME>-<PROJECT-ID>-eks-cluster-<PROJECT-POSTFIX>
+** This role is created as part of the projects in this folder
+
+To use these roles to access the cluster please review documentation on configuring your system SSO and or assuming roles.
+
+=== 001-eks-std-irsa
+
+This is the most complete example and in most cases is what should be used for setting up personal projects
+
+=== 002-eks-std-pod-identity
+
+This is supposed to increase security by decoupling how eks and kubernetes authenticate. While pod identity is installed this example is not fully configured to make use of this
+
+=== 003-eks-auto-irsa
+
+Turns on auto mode and is supposed to make auto-scaling work better and easier to configure. However, I can't seem to ever get the node groups to come up correctly in this example
+
+=== 004-eks-auto-pod-identity
+
+Same as the `003` example but with pod identity. Cluster comes up but node groups never seem to attach correctly
+
+=== 005-eks-std-irsa-module
+
+This uses the HashiCorp provided EKS module which is _supposedly_ a simplification. I am not sure I agree that this is easier than just using the built in terraform resources.
+
+=== 006-eks-std-pod-identity-module
+
+Same as the `005` example but with pod identity. This is supposed to increase security by decoupling how eks and kubernetes authenticate. While pod identity is installed this example is not fully configured to make use of this
+
+=== 007-eks-auto-irsa-module
+
+Not tested but asume it has the same problems as `003` and `004`
+
+
+== Reference
+
+* https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_cluster
+

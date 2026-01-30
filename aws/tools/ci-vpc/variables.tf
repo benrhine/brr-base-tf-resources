@@ -35,7 +35,8 @@ variable "project_id" {
 variable "project_postfix" {
   description = "Randomly generated value generated when creating initial S3 bucket"
   type        = string
-  default     = "xi7egjwf"
+  default = "cwn52hk6"
+  # default     = "xi7egjwf"
 }
 
 variable "environment" {

@@ -18,10 +18,16 @@ variable "team_name" {
   default     = "BRR"
 }
 
+variable "aws_region" {
+  description = "Aws Region"
+  type        = string
+  default     = "us-east-2"
+}
+
 variable "project_name" {
   description = "Name of the project"
   type        = string
-  default     = "ci_eks_cluster"
+  default     = "test"
 }
 
 variable "project_id" {
@@ -89,7 +95,7 @@ variable "cluster_ng_remote_access_key" {
 variable "project_postfix" {
   description = "Randomly generated value generated when creating initial S3 bucket"
   type        = string
-  default     = "xi7egjwf"
+  default     = "vfqysx7t"
 }
 
 variable "requires_cluster_admin_role_001" {
@@ -101,5 +107,5 @@ variable "requires_cluster_admin_role_001" {
 variable "requires_cluster_admin_role_002" {
   description = "CI execution role - may be necessary to use the same role as was used for creation"
   type        = string
-  default     = "github_oidc_ci_assume_role"
+  default     = "github_oidc_ci_assume_role_vfqysx7t"
 }

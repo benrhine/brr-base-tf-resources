@@ -182,55 +182,56 @@ locals {
 }
 
 ########################################################################################################################
-# Create Eks cluster
+# Create Eks cluster - https://github.com/terraform-aws-modules/terraform-aws-eks
 ########################################################################################################################
-resource "aws_eks_cluster" "eks_cluster" {
-  name     = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
-  role_arn = aws_iam_role.eks_role.arn
-  vpc_config {
-    subnet_ids         = local.private_subnet_ids
-    security_group_ids = [aws_security_group.eks_cluster_sg.id]
-  }
+module "eks_cluster" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 21.15.1"
+
+  name               = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
+  kubernetes_version = "1.34"
 
   # Enable modern authentication mode
-  access_config {
-    authentication_mode = var.cluster_auth_mode
-  }
+  authentication_mode = var.cluster_auth_mode
 
-  # This is required when auto mode is enabled
-  bootstrap_self_managed_addons = false
-
-  # The "Easy Button"
-  compute_config {
-    enabled       = true
-    node_pools    = ["general-purpose", "system"]
-    node_role_arn = aws_iam_role.eks_node_group_role.arn
-  }
-
-  # Native Networking
-  kubernetes_network_config {
-    elastic_load_balancing {
-      enabled = true
+  addons = {
+    coredns = {}
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
+    kube-proxy = {}
+    vpc-cni = {
+      before_compute = true
     }
   }
 
-  # Native Storage
-  storage_config {
-    block_storage {
-      enabled = true
-    }
+  # Optional
+  endpoint_public_access = true
+
+  # Optional: Adds the current caller identity as an administrator via cluster access entry
+  enable_cluster_creator_admin_permissions = true
+
+  compute_config = {
+    enabled = false
+    # node_pools = ["general-purpose"]
   }
 
-  lifecycle {
-    precondition {
-      condition     = length(local.private_subnet_ids) >= 2
-      error_message = "EKS requires at least two subnets in different AZs"
+  vpc_id     = "vpc-060fad6d748d9b3af"
+  subnet_ids = local.private_subnet_ids
+
+  # EKS Managed Node Group(s)
+  eks_managed_node_groups = {
+    example = {
+      # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
+      ami_type       = "AL2023_x86_64_STANDARD"
+      instance_types = [var.environment_instance_type]
+
+      min_size     = var.cluster_ng_min_size
+      max_size     = var.cluster_ng_max_size
+      desired_size = var.cluster_ng_desired_size
+      iam_role_arn = aws_iam_role.eks_node_group_role.arn
     }
   }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.eks_policy
-  ]
 
   tags = {
     environment  = var.environment
@@ -240,24 +241,6 @@ resource "aws_eks_cluster" "eks_cluster" {
     create_date  = timestamp()
     cluster_name = "${local.resource_prefix}-eks-cluster-${var.project_postfix}" // Can not use reference as it causes a circular dependency
     name         = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
-  }
-}
-
-resource "aws_eks_addon" "vpc-cni" {
-  cluster_name = aws_eks_cluster.eks_cluster.name
-  addon_name   = "vpc-cni"
-
-  lifecycle {
-    ignore_changes = all
-  }
-}
-
-resource "aws_eks_addon" "eks-pod-identity-agent" {
-  cluster_name = aws_eks_cluster.eks_cluster.name
-  addon_name   = "eks-pod-identity-agent"
-
-  lifecycle {
-    ignore_changes = all
   }
 }
 
@@ -273,10 +256,10 @@ locals {
     aws_iam_role.eks_role.arn,
     throw("Required IAM role '${aws_iam_role.eks_role.name}' does not exist")
   )
-  sso_role_arn = try(
-    data.aws_iam_role.sso.arn,
-    throw("Required IAM role '${var.requires_cluster_admin_role_001}' does not exist")
-  )
+  # sso_role_arn = try(
+  #   data.aws_iam_role.sso.arn,
+  #   throw("Required IAM role '${var.requires_cluster_admin_role_001}' does not exist")
+  # )
   ci_role_arn = try(
     data.aws_iam_role.ci.arn,
     throw("Required IAM role '${var.requires_cluster_admin_role_002}' does not exist")
@@ -284,122 +267,55 @@ locals {
 }
 
 resource "aws_eks_access_entry" "eks_role_access" {
-  cluster_name  = aws_eks_cluster.eks_cluster.name
+  cluster_name  = module.eks_cluster.cluster_name
   principal_arn = local.eks_role_arn
   type          = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "eks_role_access_policy" {
-  cluster_name  = aws_eks_cluster.eks_cluster.name
+  cluster_name  = module.eks_cluster.cluster_name
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn = local.eks_role_arn
 
   access_scope {
     type = "cluster"
   }
-  depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
+  depends_on = [aws_iam_role.eks_role, module.eks_cluster]
 }
 
 resource "aws_eks_access_entry" "oidc_role_access" {
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  principal_arn = local.ci_role_arn
-  type          = "STANDARD"
+  cluster_name            = module.eks_cluster.cluster_name
+  principal_arn           = local.ci_role_arn
+  type                    = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "oidc_role_access_policy" {
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = local.ci_role_arn
+  cluster_name            = module.eks_cluster.cluster_name
+  policy_arn              = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn           = local.ci_role_arn
 
   access_scope {
-    type = "cluster"
+    type                  = "cluster"
   }
-  depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
+  depends_on = [aws_iam_role.eks_role, module.eks_cluster]
 }
 
-resource "aws_eks_access_entry" "sso_role_access" {
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  principal_arn = local.sso_role_arn
-  type          = "STANDARD"
-}
-
-resource "aws_eks_access_policy_association" "sso_role_access_policy" {
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = local.sso_role_arn
-
-  access_scope {
-    type = "cluster"
-  }
-  depends_on = [aws_iam_role.eks_role, aws_eks_cluster.eks_cluster]
-}
-
-
-#####################################################################################
-# Attempt 2
-#####################################################################################
-# module "eks" {
-#   source  = "terraform-aws-modules/eks/aws"
-#   version = "~> 21.11"
-#
-#   name    = "example-2-${random_string.suffix.result}"
-#   kubernetes_version = "1.34"
-#
-#   iam_role_arn = aws_iam_role.eks_role.arn
-#
-#   # Optional
-#   endpoint_public_access = true
-#
-#   # Optional: Adds the current caller identity as an administrator via cluster access entry
-#   enable_cluster_creator_admin_permissions = true
-#
-#   addons = {
-#     coredns                = {}
-#     eks-pod-identity-agent = {}
-#     kube-proxy             = {}
-#     vpc-cni                = {}
-#   }
-#
-#   vpc_id     = data.aws_vpc.custom.id
-#   subnet_ids = local.private_subnet_ids
-#
-#   eks_managed_node_groups = {
-#     example = {
-#       instance_types = ["t3.small"]
-#       min_size       = 1
-#       max_size       = 2
-#       desired_size   = 1
-#       subnet_ids      = local.private_subnet_ids
-#       vpc_security_group_ids = [aws_security_group.eks_cluster_sg.id]
-#       iam_role_arn = aws_iam_role.eks_node_group_role.arn
-#       # remote_access = {
-#       #   ec2_ssh_key = "brr-test"  # Replace with your key pair name
-#       # }
-#     }
-#   }
-#
-#   access_entries = {
-#     # One access entry with a policy associated
-#     example = {
-#       kubernetes_groups = []
-#       principal_arn     = aws_iam_role.eks_role.arn
-#
-#       policy_associations = {
-#         example = {
-#           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
-#           access_scope = {
-#             namespaces = ["default"]
-#             type       = "namespace"
-#           }
-#         }
-#       }
-#     }
-#   }
-#
-#   tags = {
-#     environment = "dev"
-#     terraform   = "true"
-#   }
+# resource "aws_eks_access_entry" "sso_role_access" {
+#   cluster_name  = module.eks_cluster.cluster_name
+#   principal_arn = local.sso_role_arn
+#   type          = "STANDARD"
 # }
+#
+# resource "aws_eks_access_policy_association" "sso_role_access_policy" {
+#   cluster_name  = module.eks_cluster.cluster_name
+#   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+#   principal_arn = local.sso_role_arn
+#
+#   access_scope {
+#     type = "cluster"
+#   }
+#   depends_on = [aws_iam_role.eks_role, module.eks_cluster]
+# }
+
 
 

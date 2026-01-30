@@ -3,7 +3,7 @@
 # for notes on alias
 provider "aws" {
   # alias   = "brr-tools"
-  region = "us-west-2"
+  region = "us-east-2"
   # shared_config_files = ["~/.aws/config"]
   profile = "brr-tools-admin"
 }

@@ -1,34 +1,17 @@
-########################################################################################################################
-# To view module outputs at runtime, outputs must be re-declared in root module outputs.tf to connect them to sub-modules
-# outputs.tf file
-########################################################################################################################
 
-########################################################################################################################
-# S3 Outputs
-########################################################################################################################
-output "aws_s3_bucket_name" {
-  description = "Base service role name"
-  value       = module.s3_tf_state_bucket.aws_s3_bucket_name
-}
-
-output "aws_s3_bucket_arn" {
-  description = "Base service role ARN"
-  value       = module.s3_tf_state_bucket.aws_s3_bucket_arn
-}
 
 ########################################################################################################################
 # S3 Policy Outputs
 ########################################################################################################################
-# output "aws_s3_bucket_policy" {
-#   description = "Base service role id"
-#   value       = module.s3_policies.aws_s3_bucket_policy.bucket
-# }
+output "github_oidc_connection_arn" {
+  description = "ARN of GitHub OIDC Connection"
+  value       = module.github_oidc_ci_assume_role.created_role_arn
+}
 
-
-# output "github_oidc_connection_arn" {
-#   description = "ARN of GitHub OIDC Connection"
-#   value       = aws_iam_openid_connect_provider.github.arn
-# }
+output "admin_role_arn" {
+  description = "ARN of GitHub OIDC Connection"
+  value       = module.admin_assume_role.created_role_arn
+}
 ########################################################################################################################
 # SSM Property Outputs
 ########################################################################################################################

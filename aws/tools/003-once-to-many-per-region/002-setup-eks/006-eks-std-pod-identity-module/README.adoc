@@ -1,4 +1,4 @@
-= 005 - Eks standard deployment with IRSA Authentication using HashiCorp module
+= 006 - Eks standard deployment with Pod Identity Authentication using HashiCorp module
 
 [NOTE]
 Both the cluster and the node group currently deploy successfully as of 20260129 @ 1230. However, pod identity is not fully configured

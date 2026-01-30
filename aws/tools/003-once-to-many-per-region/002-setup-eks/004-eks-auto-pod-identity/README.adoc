@@ -1,0 +1,8 @@
+= 004 - Eks auto mode with Pod Identity authentication
+
+[NOTE]
+The cluster currently deploys successfully as of 20260129 @ 1230. However, no node groups start up (and im pretty sure this is by design). This may require more work before it is usable. Terminal is authorized the same as project 001, 002, and 003.
+
+This project is essentially the same as `002-eks-std-pod-identity` except that it uses EKS auto mode. It also has all the same shortcomings as project `002...`. Meaning, that pod identity is deployed alongside this cluster however, it is still not understood how Kubernetes service accounts are configured and if they fully replace the IRSA access to the cluster.
+
+

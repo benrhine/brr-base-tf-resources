@@ -3,16 +3,10 @@
 # for notes on alias
 provider "aws" {
   # alias   = "brr-tools"
-  region  = "us-west-2"
+  region = var.aws_region
   # shared_config_files = ["~/.aws/config"]
   profile = "brr-tools-admin"
 }
-
-# provider "aws" {
-#   alias   = "brr-np"
-#   region  = "us-east-2"
-#   profile = "brr-np-admin"
-# }
 
 provider "kubernetes" {
   host                   = data.aws_eks_cluster.eks_cluster.endpoint
@@ -20,8 +14,3 @@ provider "kubernetes" {
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
   # config_path = "~/.kube/config"
 }
-
-
-# TODO
-# I believe these will have to be modified to receive client/secret from buildspec
-# only reason the main one works this way is because it is initially executed from local

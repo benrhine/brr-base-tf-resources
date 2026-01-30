@@ -1,0 +1,43 @@
+= 002 - Eks standard deployment with Pod Identity Authentication
+
+[NOTE]
+Both the cluster and the node group currently deploy successfully as of 20260129 @ 1230. However, pod identity is not fully configured
+
+Setting up EKS with Pod Identity is not currently clear in my head. I have started with this project and added the necessary data object and role object, however, the association is not in place as it requires Kubernetes service accounts and that is not clear to me on what that looks like and needs more research.
+
+It seem to me that I need to add to the terraform the creation of Kubernetes service accounts then need to perform the association to the IAM role, AND THEN that iam role can be assumed to grant permissions.
+
+Everything I have read to this point says there is not a way to grant full cluster permissions.
+
+To me this means I still need to have the roles setup the same way I do for project `001-eks-std-irsa` for me to work with the cluster AND THEN I can add pod identity for alternate/additional authentication
+
+[TIP]
+This project does fully deploy and does correctly attach the node group and comes up to an acceptable state
+
+[NOTE]
+Due to confusion around how pod identity is supposed to work I have left this project configured with the exact same authentication as in `001-eks-std-irsa` to ensure I can work with the cluster out of the box while I further investigate how pod identity is supposed to work. This means your SSO role _should_ have cluster admin rights and can execute `kubectl` commands. However, in addition to leaving the previous I have configured the pod identity agent and an associated role - further work is needed for this to be fully working appropriately.
+
+== Update local context
+
+[source, shell]
+----
+aws eks update-kubeconfig --region YOUR-REGION --name YOUR-CLUSTER-NAME
+----
+
+== Verify pod identity agent is running
+
+[source, shell]
+----
+kubectl get pods -n kube-system | grep 'eks-pod-identity-agent'
+----
+
+
+== Reference
+
+* https://medium.com/@marco.sciatta/aws-eks-from-irsa-to-pod-identity-with-terraform-c523423678b8
+** I started with this article
+* https://medium.com/@patilpushkar98/aws-elastic-kubernetes-service-pod-identity-step-by-step-guide-6a9f0c507edb
+** Like this one alot
+* https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_pod_identity_association
+* https://medium.com/@jrkessl/kubernetes-service-accounts-what-they-are-and-how-to-implement-9b3701c667d0
+* https://chatgpt.com/share/697ba79e-4c84-8011-8c3b-0d958ac232ef

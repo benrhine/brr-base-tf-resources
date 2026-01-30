@@ -1,5 +1,70 @@
 = brr-base-tf-resources
 
+[NOTE]
+This is not the cleanest repo I have ever written so there may be some visible kruft around.
+
+[TIP]
+Look at the branches of this project. One is configured for Terraform, another is configured for OpenTofu and there are slight variations between the two
+
+The goal of this repo is to provide a complete working template for new cloud account setups including base CI jobs to facilitate clear and easy setup and configuration.
+
+Eventually I hope to have templates for multiple cloud providers. As it currently stands all projects are written with Aws in mind and are contained under the aws folder.
+
+The `002-setup-eks` project contains multiple valid ways in which to set up and configure your eks cluster. However, these various examples are in varying states of working order. Minimally all projects will successfully deploy an EKS cluster to Aws. See details below for state ...
+
+* `001`
+** Fully working as described in read me
+** Can deploy argo
+* `002`
+** Works like project `001`
+** Pod identity is not fully configured
+* `003`
+** Auto mode is enabled
+** No node groups are created
+** So far all deployments have failed taking to long
+** Authentication is the same as project `001`
+* `004`
+** Auto mode is enabled
+** No node groups are created
+** So far all deployments have failed taking to long
+** Pod identity is not fully configured
+** Authentication is the same as project `001`
+* `005`
+** Uses HashiCorp provided EKS Module
+** Deploys cluster but fails to create node groups
+** DOES NOT CURRENTLY WORK
+* `006`
+** Uses HashiCorp provided EKS Module
+** Deploys cluster but fails to create node groups
+** DOES NOT CURRENTLY WORK
+
+[NOTE]
+Please reference the sub-readmes in each of the specified projects.
+
+== Known Issues
+
+* common - node group is not created or fails to attach to the cluster
+** fix - unclear at this point
+* common - incorrect authentication bridging the gap between iam and rbac
+** fix - review project `001-eks-std-irsa` this shows how to correctly get roles created in Terraform/OpenTofu authorized to rbac
+
+== Reference
+
+* https://spacelift.io/blog/github-actions-terraform
+* https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows#passing-inputs-and-secrets-to-a-reusable-workflow
+* https://spacelift.io/blog/argocd-terraform
+* https://dev.to/mechcloud_academy/eks-standard-vs-eks-auto-mode-the-evolutionary-leap-in-kubernetes-operations-287g
+* https://dev.to/kelechiedeh/step-by-step-guide-creating-an-amazon-eks-cluster-using-terraform-5204
+* https://medium.com/@cloudcommander/argocd-on-aws-eks-as-simple-as-ever-171ae71f3a37
+** look at this one for deploying to argo
+* https://medium.com/@Jitendra09/from-push-to-pull-why-github-actions-argocd-is-the-devops-duo-you-need-in-2025-a38978f3dafe
+* https://medium.com/@anujkishor1994/streamlining-multi-environment-argocd-management-centralized-control-for-multiple-applications-7e11a6d70c42
+** this is the one to review for multi environment management
+* https://7tonshark.com/posts/organize-github-workflows/
+** How to organize github workflows
+
+== Legacy notes - not sure if useful
+
 my local role arn
 
  * arn:aws:sts::792981815698:assumed-role/AWSReservedSSO_AdministratorAccess_eeb8e63974797d2b/brrAwsIdentity

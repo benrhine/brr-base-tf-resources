@@ -9,12 +9,12 @@ terraform {
   }
   required_version = "~> 1.14.3"
 
-  backend "s3" {
-    bucket                  = "tf-state-xi7egjwf"
-    key                     = "ci-vpc/terraform.tfstate"
-    region                  = "us-east-2"
-    encrypt                 = true
-    use_lockfile            = true
-    # profile                 = "brr-tools-admin"
-  }
+  # backend "s3" {
+  #   bucket                  = "tf-state-cwn52hk6"
+  #   key                     = "ci-vpc/terraform.tfstate"
+  #   region                  = "us-west-2"
+  #   encrypt                 = true
+  #   use_lockfile            = true
+  #   # profile                 = "brr-tools-admin"
+  # }
 }

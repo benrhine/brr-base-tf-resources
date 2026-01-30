@@ -235,9 +235,9 @@ resource "aws_eks_node_group" "eks_node_group" {
 
   instance_types          = [var.environment_instance_type]
 
-  remote_access {
-    ec2_ssh_key           = var.cluster_ng_remote_access_key  # Replace with your key pair name
-  }
+  # remote_access {
+  #   ec2_ssh_key           = var.cluster_ng_remote_access_key  # Replace with your key pair name
+  # }
 
   update_config {
     max_unavailable       = var.cluster_ng_max_unavailable

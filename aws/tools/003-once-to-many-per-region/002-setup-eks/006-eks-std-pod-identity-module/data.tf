@@ -57,22 +57,22 @@ data "aws_iam_policy_document" "eks_all_permissions" {
 # Find additional IAM roles that require Kubernetes access
 ########################################################################################################################
 
-data "aws_iam_role" "sso" {
-  name = var.requires_cluster_admin_role_001
-}
+# data "aws_iam_role" "sso" {
+#   name = var.requires_cluster_admin_role_001
+# }
 
 data "aws_iam_role" "ci" {
   name = var.requires_cluster_admin_role_002
 }
 
-data "aws_eks_cluster" "eks_cluster" {
-  name = aws_eks_cluster.eks_cluster.name
-
-  # depends_on = [aws_eks_cluster.eks_cluster]
-}
-
-data "aws_eks_cluster_auth" "eks_cluster" {
-  name = aws_eks_cluster.eks_cluster.name
-
-  # depends_on = [aws_eks_cluster.eks_cluster]
-}
+# data "aws_eks_cluster" "eks_cluster" {
+#   name = module.eks_cluster.cluster_name
+#
+#   # depends_on = [aws_eks_cluster.eks_cluster]
+# }
+#
+# data "aws_eks_cluster_auth" "eks_cluster" {
+#   name = module.eks_cluster.cluster_name
+#
+#   # depends_on = [aws_eks_cluster.eks_cluster]
+# }

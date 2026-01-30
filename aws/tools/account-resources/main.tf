@@ -23,16 +23,16 @@ locals {
 
 # checkov:skip=CKV_TF_1 "Using pinned module, ignore false positive"
 module "s3_tf_state_bucket" {
-  source                        = "git::https://github.com/benrhine/brr-s3-module.git?ref=v0.0.1.7"                                          # Where to find the module
+  source = "git::https://github.com/benrhine/brr-s3-module.git?ref=v0.0.1.7" # Where to find the module
   ######################################################################################################################
   #   aws_region                    = data.aws_region.current.name                            # Value retrieved in data.tf
   #   aws_account                   = data.aws_caller_identity.current.account_id             # Value retrieved in data.tf
   #   project_name                  = var.project_name                                        # Value passed in via variables.tf
   # Custom defined value
-  create_bucket_name            = "${var.framework_prefix}-state-${random_string.suffix.result}"
-  s3_tags_environment           = var.tag_environment_tools                                 # Value passed in via variables.tf
-  s3_tags_origination           = var.tag_origination_repo
-  s3_tags_project               = var.project_name
+  create_bucket_name  = "${var.framework_prefix}-state-${random_string.suffix.result}"
+  s3_tags_environment = var.tag_environment_tools # Value passed in via variables.tf
+  s3_tags_origination = var.tag_origination_repo
+  s3_tags_project     = var.project_name
 }
 
 # Enable versioning on bucket that maintains terraform state
@@ -59,12 +59,12 @@ module "github_oidc_ci_assume_role" {
   source = "git::https://github.com/benrhine/brr-iam-roles-module.git?ref=v0.0.1.1" # Where to find the module
   ######################################################################################################################   # Value passed in via variables.tf
   # iam_role_name            = "${var.iam_role_name}_${local.convert_to_underscores}"
-  iam_role_name            = "${var.iam_role_name}"
-  iam_role_description     = "This is the base CI role that will be assumed"
-  iam_assume_role_policy   = data.aws_iam_policy_document.github_oidc_ci_assume_role.json
-  iam_tags_environment     = var.tag_environment
-  iam_tags_origination     = var.tag_origination_repo
-  iam_tags_project         = var.project_name
+  iam_role_name          = "${var.iam_role_name}-${random_string.suffix.result}"
+  iam_role_description   = "This is the base CI role that will be assumed"
+  iam_assume_role_policy = data.aws_iam_policy_document.github_oidc_ci_assume_role.json
+  iam_tags_environment   = var.tag_environment
+  iam_tags_origination   = var.tag_origination_repo
+  iam_tags_project       = var.project_name
 }
 
 # Attach IAM Policy to newly created role
@@ -82,12 +82,12 @@ module "admin_assume_role" {
   source = "git::https://github.com/benrhine/brr-iam-roles-module.git?ref=v0.0.1.1" # Where to find the module
   ######################################################################################################################   # Value passed in via variables.tf
   # iam_role_name            = "${var.iam_role_name}_${local.convert_to_underscores}"
-  iam_role_name            = "${var.iam_role_name_2}"
-  iam_role_description     = "This is the admin role that will be assumed"
-  iam_assume_role_policy   = data.aws_iam_policy_document.admin_assume_role.json
-  iam_tags_environment     = var.tag_environment
-  iam_tags_origination     = var.tag_origination_repo
-  iam_tags_project         = var.project_name
+  iam_role_name          = "${var.iam_role_name_2}-${random_string.suffix.result}"
+  iam_role_description   = "This is the admin role that will be assumed"
+  iam_assume_role_policy = data.aws_iam_policy_document.admin_assume_role.json
+  iam_tags_environment   = var.tag_environment
+  iam_tags_origination   = var.tag_origination_repo
+  iam_tags_project       = var.project_name
 }
 
 # Attach IAM Policy to newly created role
@@ -106,21 +106,21 @@ resource "aws_iam_role_policy_attachment" "admin_assume_role_attachment" {
 resource "github_actions_secret" "env_secret_1" {
   repository = var.git_repo_name
   # environment     = var.current_env
-  secret_name     = "${upper(var.current_env)}_ROLE"
+  secret_name     = "${upper(var.current_env)}_ROLE_2"
   plaintext_value = module.github_oidc_ci_assume_role.created_role_arn
 }
 
 resource "github_actions_secret" "env_secret_2" {
   repository = var.git_repo_name
   # environment     = var.current_env
-  secret_name     = "${upper(var.current_env)}_ROLE_DURATION"
+  secret_name     = "${upper(var.current_env)}_ROLE_DURATION_2"
   plaintext_value = var.git_role_duration
 }
 
 resource "github_actions_secret" "env_secret_3" {
   repository = var.git_repo_name
   # environment     = var.current_env
-  secret_name     = "${upper(var.current_env)}_AWS_REGION"
+  secret_name     = "${upper(var.current_env)}_AWS_REGION_2"
   plaintext_value = var.git_aws_region
 }
 
@@ -137,15 +137,15 @@ resource "github_actions_secret" "env_secret_3" {
 # Store role for CI Actions in Aws: This is to ensure role is accessible for future actions
 ########################################################################################################################
 # checkov:skip=CKV_TF_1 "Using pinned module, ignore false positive"
-module "ci_role_to_assume" {
-  source = "git::https://github.com/benrhine/brr-ssm-module.git?ref=v0.0.1.1" # Where to find the module
-  ######################################################################################################################
-  property_name             = "/${var.business_area_name}/${lower(var.team_name)}/${lower(var.current_env)}/${var.framework_prefix}/${var.iam_role_name}_${local.convert_to_underscores}" # Custom defined value
-  property_description      = "Role to assume during CI jobs"                                                                                                               # Custom defined value
-  property_value            = module.github_oidc_ci_assume_role.created_role_arn                                                                                            # Value retrieved from module outputs.tf
-  property_type             = "SecureString"
-  property_tags_environment = var.tag_environment # Value passed in via variables.tf
-  property_tags_origination = var.tag_origination_repo
-  property_tags_project     = var.project_name
-}
+# module "ci_role_to_assume" {
+#   source = "git::https://github.com/benrhine/brr-ssm-module.git?ref=v0.0.1.1" # Where to find the module
+#   ######################################################################################################################
+#   property_name             = "/${var.business_area_name}/${lower(var.team_name)}/${lower(var.current_env)}/${var.framework_prefix}/${var.iam_role_name}_${local.convert_to_underscores}" # Custom defined value
+#   property_description      = "Role to assume during CI jobs"                                                                                                               # Custom defined value
+#   property_value            = module.github_oidc_ci_assume_role.created_role_arn                                                                                            # Value retrieved from module outputs.tf
+#   property_type             = "SecureString"
+#   property_tags_environment = var.tag_environment # Value passed in via variables.tf
+#   property_tags_origination = var.tag_origination_repo
+#   property_tags_project     = var.project_name
+# }
 

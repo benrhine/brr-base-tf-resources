@@ -1,0 +1,20 @@
+= 003 - Eks auto mode with IRSA authentication
+
+[NOTE]
+The cluster currently deploys successfully as of 20260129 @ 1230. However, no node groups start up (and im pretty sure this is by design). This may require more work before it is usable. Terminal is authorized the same as project 001, and 002.
+
+The purpose and usage of auto mode is still a bit unclear to me. I understand that this is supposed to help with the automatic scaling of resources as a project grows, however, during setup it seems to cause some issues. Those issues being that while the cluster will come up there is no associated node group. The node group creation is left to "_automatically_" happen when things are deployed to the cluster but this results in extremely long creation time of resources and many times the node group will fail to join the cluster.
+
+This leaves me questioning if the is the correct setup and what the true point of auto mode is?
+
+I have seen some references that say you should start the cluster with auto mode AND create an initial node group so the cluster is "warm" and then once you have populated the cluster you can remove that initial node group. Not sure if this is actually beneficial or not.
+
+
+
+== Reference
+
+* https://dev.to/mechcloud_academy/eks-standard-vs-eks-auto-mode-the-evolutionary-leap-in-kubernetes-operations-287g
+* https://chatgpt.com/share/697bb484-0cc0-8011-8e7c-3b0fa2853a62
+
+
+

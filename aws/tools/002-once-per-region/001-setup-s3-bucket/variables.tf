@@ -69,6 +69,12 @@ variable "git_aws_region" {
   default     = "us-west-2"
 }
 
+variable "aws_region" {
+  description = "Aws Region"
+  type        = string
+  default     = "us-east-2"
+}
+
 # Terraform: ===================================================================
 variable "framework_prefix" {
   description = "What IaC tool is being used for this deployment?"
@@ -92,7 +98,33 @@ variable "team_name" {
 variable "project_name" {
   description = "Name of the project"
   type        = string
-  default     = "account_resources"
+  default     = "001-setup-s3-bucket"
+}
+
+variable "project_id" {
+  description = "Id of the project"
+  type        = string
+  default     = "001"
+}
+
+# This value should be same as the S3 bucket postfix and should be used for all project that use the given S3 bucket
+# for maintaining their state
+variable "project_postfix" {
+  description = "Randomly generated value generated when creating initial S3 bucket"
+  type        = string
+  default     = "vfqysx7t"
+}
+
+variable "environment" {
+  description = "What environment is this deployed in"
+  type        = string
+  default     = "dev"
+}
+
+variable "environment_prefix" {
+  description = "Prefix resource names with environment?"
+  type        = bool
+  default     = false
 }
 
 # variable "deployment_bucket_name" {
@@ -187,312 +219,3 @@ variable "ssm_objects_to_create" {
     }
   ]
 }
-
-variable "cloudwatch_queries_to_create" {
-  type = list(object({
-    name  = string
-    value = string
-
-  }))
-
-  validation {
-    condition     = alltrue([for x in var.cloudwatch_queries_to_create : can(regex("^(general-.)", x.name))])
-    error_message = "Property name must start with 'general'."
-  }
-
-  default = [
-    {
-      name  = "general-find-all-debug"
-      value = "DEBUG"
-    },
-    {
-      name  = "general-find-all-info"
-      value = "INFO"
-    },
-    {
-      name  = "general-find-all-warnings"
-      value = "WARNING"
-    },
-    {
-      name  = "general-find-all-errors"
-      value = "ERROR"
-    },
-    {
-      name  = "general-find-all-aws-xray"
-      value = "AWS_XRAY"
-    },
-    # Note the following values are double quoted in CloudFormation/Serverless but only support single quotes here
-    # not sure if that matters when running the query
-    {
-      name  = "general-find-all-json-debug"
-      value = "fields @timestamp, @message, @logStream, @log | filter level = 'WARN' | sort @timestamp desc | limit 20"
-    },
-    {
-      name  = "general-find-all-json-info"
-      value = "fields @timestamp, @message, @logStream, @log | filter level = 'INFO' | sort @timestamp desc | limit 20"
-    },
-    {
-      name  = "general-find-all-json-warnings"
-      value = "fields @timestamp, @message, @logStream, @log | filter level = 'WARN' | sort @timestamp desc | limit 20"
-    },
-    {
-      name  = "general-find-all-json-errors"
-      value = "fields @timestamp, @message, @logStream, @log | filter level = 'ERROR' | sort @timestamp desc | limit 20"
-    },
-    {
-      name  = "general-find-all-json-cold-start-true"
-      value = "fields @timestamp, @message, @logStream, @log | filter coldStart = 'true' | sort @timestamp desc | limit 20"
-    },
-    {
-      name  = "general-find-all-json-cold-start-false"
-      value = "fields @timestamp, @message, @logStream, @log | filter coldStart = 'false' | sort @timestamp desc | limit 20"
-    },
-  ]
-}
-
-variable "iam_objects_to_create" {
-  type = list(object({
-    iam_role_name          = string
-    iam_role_description   = string # This value is defaulted in ssm module variables
-    iam_role_path          = string # This value is defaulted in ssm module variables
-    iam_assume_role_policy = string
-    iam_tags_environment   = string
-  }))
-  default = [
-    {
-      iam_role_name          = "tf-base-assumed-service-role"
-      iam_role_description   = "This is the base role that will be assumed"
-      iam_role_path          = "/"
-      iam_assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-      {
-          "Effect": "Allow",
-          "Principal": {
-              "AWS": "arn:aws:iam::792981815698:root"
-          },
-          "Action": "sts:AssumeRole"
-      }
-  ]
-}
-EOF
-      iam_tags_environment   = "tools"
-    },
-    {
-      iam_role_name          = "tf-base-ervice-role"
-      iam_role_description   = "This is the base role that will be used to deploy resources"
-      iam_role_path          = "/"
-      iam_assume_role_policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "Service": [
-                    "codepipeline.amazonaws.com",
-                    "codebuild.amazonaws.com",
-                    "cloudformation.amazonaws.com"
-                ]
-            },
-            "Action": "sts:AssumeRole"
-        }
-    ]
-}
-EOF
-      iam_tags_environment   = "tools"
-    },
-    {
-      iam_role_name          = "tf-account-resources-resource-deploy-service-role"
-      iam_role_description   = "This is the base role that will be assumed"
-      iam_role_path          = "/service-role/"
-      iam_assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-      {
-          "Effect": "Allow",
-          "Principal": {
-              "Service": [
-                  "codebuild.amazonaws.com"
-              ]
-          },
-          "Action": "sts:AssumeRole"
-      }
-  ]
-}
-EOF
-      iam_tags_environment   = "tools"
-    },
-    {
-      iam_role_name          = "account-resources-codepipeline-role"
-      iam_role_description   = "This is the base role that will be assumed"
-      iam_role_path          = "/service-role/"
-      iam_assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-      {
-          "Effect": "Allow",
-          "Principal": {
-              "Service": [
-                  "codepipeline.amazonaws.com"
-              ]
-          },
-          "Action": "sts:AssumeRole"
-      }
-  ]
-}
-EOF
-      iam_tags_environment   = "tools"
-    },
-    {
-      iam_role_name          = "tf-codepipeline-event-rule-role"
-      iam_role_description   = "This role allows for the CodePipeline to execute"
-      iam_role_path          = "/"
-      iam_assume_role_policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "Service": [
-                    "events.amazonaws.com"
-                ]
-            },
-            "Action": "sts:AssumeRole"
-        }
-    ]
-}
-EOF
-      iam_tags_environment   = "tools"
-    },
-  ]
-}
-
-# variable "iam_policies_and_attachments_to_create" {
-#   type = list(object({
-#     iam_policy_name           = string
-#     iam_policy_description    = string
-#     iam_policy                = string
-#     iam_policy_role_to_attach = string
-#   }))
-#   default = [
-#     {
-#       iam_policy_name           = "tf_account_resources_iam"
-#       iam_policy_description    = "Custom IAM policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_iam.json
-#       iam_policy_role_to_attach = module.base_assumed_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_iam_all"
-#       iam_policy_description    = "Custom IAM policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_iam_all.json
-#       iam_policy_role_to_attach = module.base_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_codebuild_resource_simple"
-#       iam_policy_description    = "Custom CodeBuild policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_codebuild_resource_simple.json
-#       iam_policy_role_to_attach = module.base_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_codepipeline"
-#       iam_policy_description    = "Custom CodePipeline policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_codepipeline.json
-#       iam_policy_role_to_attach = module.base_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_ssm"
-#       iam_policy_description    = "Custom SSM policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_ssm.json
-#       iam_policy_role_to_attach = module.base_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_assume_role_1"
-#       iam_policy_description    = "Custom assume policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_assume_role.json
-#       iam_policy_role_to_attach = module.base_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_log"
-#       iam_policy_description    = "Custom IAM policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_log.json
-#       iam_policy_role_to_attach = module.codebuild_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_log_group_build"
-#       iam_policy_description    = "Custom CodeBuild policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_log_group_build.json
-#       iam_policy_role_to_attach = module.codebuild_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_s3_resource_policy"
-#       iam_policy_description    = "Custom CodePipeline policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_s3_resource_policy.json
-#       iam_policy_role_to_attach = module.codebuild_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_codecommit_resource_repo_policy"
-#       iam_policy_description    = "Custom CodeCommit policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_codecommit_resource_repo_policy.json
-#       iam_policy_role_to_attach = module.codebuild_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_codebuild_resource_policy"
-#       iam_policy_description    = "Custom assume policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_codebuild_resource_policy.json
-#       iam_policy_role_to_attach = module.base_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_codepipeline_simple"
-#       iam_policy_description    = "Custom IAM policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_codepipeline_simple.json
-#       iam_policy_role_to_attach = module.codebuild_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_iam_pass_through"
-#       iam_policy_description    = "Custom CodeBuild policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_iam_pass_through.json
-#       iam_policy_role_to_attach = module.codebuild_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_ssm_get"
-#       iam_policy_description    = "Custom SSM GET policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_ssm_get.json
-#       iam_policy_role_to_attach = module.codebuild_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_assume_role_2"
-#       iam_policy_description    = "Custom assume policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_assume_role.json
-#       iam_policy_role_to_attach = module.codebuild_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_everything"
-#       iam_policy_description    = "Custom everything policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_everything.json
-#       iam_policy_role_to_attach = module.codepipeline_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_s3_restricted"
-#       iam_policy_description    = "Custom assume policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_s3_restricted.json
-#       iam_policy_role_to_attach = module.codepipeline_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_account_resources_assume_role_3"
-#       iam_policy_description    = "Custom assume policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_account_resources_assume_role.json
-#       iam_policy_role_to_attach = module.codepipeline_service_role.created_role.name
-#     },
-#     {
-#       iam_policy_name           = "tf_domain_resources_pipeline_execution_policy"
-#       iam_policy_description    = "Custom assume policy for base role"
-#       iam_policy                = data.aws_iam_policy_document.tf_domain_resources_pipeline_execution_policy.json
-#       iam_policy_role_to_attach = module.codepipeline_event_rule_role.created_role.name
-#     }
-#   ]
-# }

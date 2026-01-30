@@ -66,7 +66,7 @@ variable "git_role_duration" {
 variable "git_aws_region" {
   description = "Aws Region for GitHub to authenticate into"
   type        = string
-  default     = "us-east-2"
+  default     = "us-west-2"
 }
 
 # Terraform: ===================================================================
@@ -171,8 +171,8 @@ variable "ssm_objects_to_create" {
   type = list(object({
     name            = string
     description     = string
-    type            = string  # This value is defaulted in ssm module variables
-    data_type       = string  # This value is defaulted in ssm module variables
+    type            = string # This value is defaulted in ssm module variables
+    data_type       = string # This value is defaulted in ssm module variables
     value           = string
     tag_environment = string
   }))
@@ -180,9 +180,9 @@ variable "ssm_objects_to_create" {
     {
       name            = "tf.brr.tools.build.s3.bucket.name"
       description     = "Deployment bucket created by account-resources"
-      type            = "String"  # This value is defaulted
-      data_type       = "text"    # This value is defaulted
-      value           = "test" #module.s3.aws_s3_bucket.bucket
+      type            = "String" # This value is defaulted
+      data_type       = "text"   # This value is defaulted
+      value           = "test"   #module.s3.aws_s3_bucket.bucket
       tag_environment = "BRR-TOOLS"
     }
   ]
@@ -190,80 +190,80 @@ variable "ssm_objects_to_create" {
 
 variable "cloudwatch_queries_to_create" {
   type = list(object({
-    name            = string
-    value           = string
+    name  = string
+    value = string
 
   }))
 
   validation {
-    condition = alltrue([for x in var.cloudwatch_queries_to_create : can(regex("^(general-.)", x.name))])
+    condition     = alltrue([for x in var.cloudwatch_queries_to_create : can(regex("^(general-.)", x.name))])
     error_message = "Property name must start with 'general'."
   }
 
   default = [
     {
-      name            = "general-find-all-debug"
-      value           = "DEBUG"
+      name  = "general-find-all-debug"
+      value = "DEBUG"
     },
     {
-      name            = "general-find-all-info"
-      value           = "INFO"
+      name  = "general-find-all-info"
+      value = "INFO"
     },
     {
-      name            = "general-find-all-warnings"
-      value           = "WARNING"
+      name  = "general-find-all-warnings"
+      value = "WARNING"
     },
     {
-      name            = "general-find-all-errors"
-      value           = "ERROR"
+      name  = "general-find-all-errors"
+      value = "ERROR"
     },
     {
-      name            = "general-find-all-aws-xray"
-      value           = "AWS_XRAY"
+      name  = "general-find-all-aws-xray"
+      value = "AWS_XRAY"
     },
     # Note the following values are double quoted in CloudFormation/Serverless but only support single quotes here
     # not sure if that matters when running the query
     {
-      name            = "general-find-all-json-debug"
-      value           = "fields @timestamp, @message, @logStream, @log | filter level = 'WARN' | sort @timestamp desc | limit 20"
+      name  = "general-find-all-json-debug"
+      value = "fields @timestamp, @message, @logStream, @log | filter level = 'WARN' | sort @timestamp desc | limit 20"
     },
     {
-      name            = "general-find-all-json-info"
-      value           = "fields @timestamp, @message, @logStream, @log | filter level = 'INFO' | sort @timestamp desc | limit 20"
+      name  = "general-find-all-json-info"
+      value = "fields @timestamp, @message, @logStream, @log | filter level = 'INFO' | sort @timestamp desc | limit 20"
     },
     {
-      name            = "general-find-all-json-warnings"
-      value           = "fields @timestamp, @message, @logStream, @log | filter level = 'WARN' | sort @timestamp desc | limit 20"
+      name  = "general-find-all-json-warnings"
+      value = "fields @timestamp, @message, @logStream, @log | filter level = 'WARN' | sort @timestamp desc | limit 20"
     },
     {
-      name            = "general-find-all-json-errors"
-      value           = "fields @timestamp, @message, @logStream, @log | filter level = 'ERROR' | sort @timestamp desc | limit 20"
+      name  = "general-find-all-json-errors"
+      value = "fields @timestamp, @message, @logStream, @log | filter level = 'ERROR' | sort @timestamp desc | limit 20"
     },
     {
-      name            = "general-find-all-json-cold-start-true"
-      value           = "fields @timestamp, @message, @logStream, @log | filter coldStart = 'true' | sort @timestamp desc | limit 20"
+      name  = "general-find-all-json-cold-start-true"
+      value = "fields @timestamp, @message, @logStream, @log | filter coldStart = 'true' | sort @timestamp desc | limit 20"
     },
     {
-      name            = "general-find-all-json-cold-start-false"
-      value           = "fields @timestamp, @message, @logStream, @log | filter coldStart = 'false' | sort @timestamp desc | limit 20"
+      name  = "general-find-all-json-cold-start-false"
+      value = "fields @timestamp, @message, @logStream, @log | filter coldStart = 'false' | sort @timestamp desc | limit 20"
     },
   ]
 }
 
 variable "iam_objects_to_create" {
   type = list(object({
-    iam_role_name           = string
-    iam_role_description    = string  # This value is defaulted in ssm module variables
-    iam_role_path           = string  # This value is defaulted in ssm module variables
-    iam_assume_role_policy  = string
-    iam_tags_environment    = string
+    iam_role_name          = string
+    iam_role_description   = string # This value is defaulted in ssm module variables
+    iam_role_path          = string # This value is defaulted in ssm module variables
+    iam_assume_role_policy = string
+    iam_tags_environment   = string
   }))
   default = [
     {
-      iam_role_name           = "tf-base-assumed-service-role"
-      iam_role_description    = "This is the base role that will be assumed"
-      iam_role_path           = "/"
-      iam_assume_role_policy  = <<EOF
+      iam_role_name          = "tf-base-assumed-service-role"
+      iam_role_description   = "This is the base role that will be assumed"
+      iam_role_path          = "/"
+      iam_assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -277,13 +277,13 @@ variable "iam_objects_to_create" {
   ]
 }
 EOF
-      iam_tags_environment    = "tools"
+      iam_tags_environment   = "tools"
     },
     {
-      iam_role_name           = "tf-base-ervice-role"
-      iam_role_description    = "This is the base role that will be used to deploy resources"
-      iam_role_path           = "/"
-      iam_assume_role_policy  = <<EOF
+      iam_role_name          = "tf-base-ervice-role"
+      iam_role_description   = "This is the base role that will be used to deploy resources"
+      iam_role_path          = "/"
+      iam_assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -301,13 +301,13 @@ EOF
     ]
 }
 EOF
-      iam_tags_environment    = "tools"
+      iam_tags_environment   = "tools"
     },
     {
-      iam_role_name           = "tf-account-resources-resource-deploy-service-role"
-      iam_role_description    = "This is the base role that will be assumed"
-      iam_role_path           = "/service-role/"
-      iam_assume_role_policy  = <<EOF
+      iam_role_name          = "tf-account-resources-resource-deploy-service-role"
+      iam_role_description   = "This is the base role that will be assumed"
+      iam_role_path          = "/service-role/"
+      iam_assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -323,13 +323,13 @@ EOF
   ]
 }
 EOF
-      iam_tags_environment    = "tools"
+      iam_tags_environment   = "tools"
     },
     {
-      iam_role_name           = "account-resources-codepipeline-role"
-      iam_role_description    = "This is the base role that will be assumed"
-      iam_role_path           = "/service-role/"
-      iam_assume_role_policy  = <<EOF
+      iam_role_name          = "account-resources-codepipeline-role"
+      iam_role_description   = "This is the base role that will be assumed"
+      iam_role_path          = "/service-role/"
+      iam_assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -345,13 +345,13 @@ EOF
   ]
 }
 EOF
-      iam_tags_environment    = "tools"
+      iam_tags_environment   = "tools"
     },
     {
-      iam_role_name           = "tf-codepipeline-event-rule-role"
-      iam_role_description    = "This role allows for the CodePipeline to execute"
-      iam_role_path           = "/"
-      iam_assume_role_policy  = <<EOF
+      iam_role_name          = "tf-codepipeline-event-rule-role"
+      iam_role_description   = "This role allows for the CodePipeline to execute"
+      iam_role_path          = "/"
+      iam_assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -367,7 +367,7 @@ EOF
     ]
 }
 EOF
-      iam_tags_environment    = "tools"
+      iam_tags_environment   = "tools"
     },
   ]
 }

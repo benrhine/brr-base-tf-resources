@@ -54,6 +54,25 @@ data "aws_iam_policy_document" "eks_all_permissions" {
 }
 
 ########################################################################################################################
+# Specific to pod identity
+########################################################################################################################
+data "aws_iam_policy_document" "assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["pods.eks.amazonaws.com"]
+    }
+
+    actions = [
+      "sts:AssumeRole",
+      "sts:TagSession"
+    ]
+  }
+}
+
+########################################################################################################################
 # Find additional IAM roles that require Kubernetes access
 ########################################################################################################################
 
