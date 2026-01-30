@@ -91,6 +91,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       project_postfix: ${{ steps.postfix.outputs.value }}
+      aws_region: ${{ steps.region.outputs.value }}
+      env: ${{ steps.env.outputs.valud }}
 
     steps:
       - name: Resolve project postfix
@@ -100,6 +102,28 @@ jobs:
           case "$env" in
             *us-east-2) v=xi7egjwf ;;
             *us-west-2) v=vfqysx7t ;;
+            *) echo "❌ Non-existent postfix: $env"; exit 1 ;;
+          esac
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve region
+        id: region
+        run: |
+          env="${{ inputs.environment }}"
+          case "$env" in
+            *us-east-2) v=us-east-2 ;;
+            *us-west-2) v=us-west-2 ;;
+            *) echo "❌ Unsupported region: $env"; exit 1 ;;
+          esac
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve environment
+        id: env
+        run: |
+          env="${{ inputs.environment }}"
+          case "$env" in
+            *dev) v=dev ;;
+            *test) v=test ;;
             *) echo "❌ Unsupported environment: $env"; exit 1 ;;
           esac
           echo "value=$v" >> "$GITHUB_OUTPUT"
@@ -214,7 +238,8 @@ jobs:
       - name: test expression
         run: |
           echo "test - ${{ needs.validate-input.outputs.project_postfix }}"
-          echo "test - $AWS_REGION"
+          echo "test - ${{ needs.validate-input.outputs.aws_region}}"
+          echo "test - ${{ needs.validate-input.outputs.env }}"
 
 #      - name: Configure AWS Credentials
 #        uses: aws-actions/configure-aws-credentials@v5.0.0
