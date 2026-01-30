@@ -5,5 +5,5 @@ provider "aws" {
   # alias   = "brr-tools"
   region = var.aws_region
   # shared_config_files = ["~/.aws/config"]
-  profile = "brr-tools-admin"
+  profile = var.aws_profile
 }

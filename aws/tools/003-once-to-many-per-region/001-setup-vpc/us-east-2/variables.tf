@@ -18,10 +18,19 @@ variable "team_name" {
   default     = "BRR"
 }
 
+########################################################################################################################
+# Provider Configuration
+########################################################################################################################
 variable "aws_region" {
   description = "Aws Region"
   type        = string
   default     = "us-east-2"
+}
+
+variable "aws_profile" {
+  description = "Local dev profile"
+  type        = string
+  default     = null
 }
 
 variable "project_name" {

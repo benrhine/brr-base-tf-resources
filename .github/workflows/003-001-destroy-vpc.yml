@@ -1,12 +1,160 @@
 name: 003-001 Destroy VPC
 on:
+  #  push:
   workflow_dispatch:
+    inputs:
+      project-name:
+        description: "Custom Name"
+        required: false
+        default: "ci_vpc"
+      project-id:
+        description: "Custom Id"
+        required: false
+        default: "001"
+      project-postfix:
+        description: "Random string applied to the end of resource names for uniqueness - should match S3 bucket"
+        required: true
+        default: "xi7egjwf"
+      aws-region:
+        description: "Which region is being deployed to"
+        required: false
+        type: choice
+        options:
+          - us-east-2
+          - us-west-2
+        default: us-east-2
+      environment:
+        description: "Target Environment"
+        required: false
+        type: choice
+        options:
+          - dev
+          - test
+          - staging
+          - prod
+      environment-prefix:
+        description: "Should resources be prefixed with environment?"
+        required: true
+        type: boolean
+        default: false
+      vpc-cidr-block:
+        description: "VPC Cidr block"
+        required: false
+        default: "10.0.0.0/16"
+      vpc-public-subnet-01:
+        description: "Public subnet"
+        required: false
+        default: "10.0.1.0/24"
+      vpc-public-subnet-02:
+        description: "Public subnet"
+        required: false
+        default: "10.0.2.0/24"
+      vpc-private-subnet-01:
+        description: "Private subnet"
+        required: false
+        default: "10.0.3.0/24"
+      vpc-private-subnet-02:
+        description: "Private subnet"
+        required: false
+        default: "10.0.4.0/24"
+      vpc-public-route-table:
+        description: "Public route table cidr block"
+        required: false
+        default: "0.0.0.0/0"
+      vpc-private-route-table:
+        description: "Private route table cidr block"
+        required: false
+        default: "0.0.0.0/0"
+
+permissions:
+  actions: write
+  id-token: write
 
 jobs:
-  tflint-account-resources:
-    name: Run TFLint - (Project Account Resources)
+
+  terraform-deploy-us-east-2:
+    if: ${{ inputs.aws-region == 'us-east-2' }}
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/us-east-2
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
+          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
+          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
+          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_version: 'latest'
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Plan destroy terraform Changes
+        env:
+          TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+        run: terraform plan -destroy
+
+      - name: Apply destroy terraform Changes
+        env:
+          TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+        run: terraform destroy -auto-approve
+
+  terraform-deploy-us-west-2:
+    if: ${{ inputs.aws-region == 'us-west-2' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/us-west-2
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
+          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
+          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
+          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_version: 'latest'
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Plan destroy terraform Changes
+        env:
+          TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+        run: terraform plan -destroy
+
+      - name: Apply destroy terraform Changes
+        env:
+          TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+        run: terraform destroy -auto-approve
+
