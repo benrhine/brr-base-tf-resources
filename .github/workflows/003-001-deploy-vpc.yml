@@ -91,17 +91,17 @@ jobs:
     outputs:
       project_postfix: ${{ steps.postfix.outputs.value }}
 
-      steps:
-        - name: Resolve project postfix
-          id: postfix
-          run: |
-            env="${{ inputs.environment }}"
-            case "$env" in
-              *us-east-2) v=xi7egjwf ;;
-              *us-west-2) v=vfqysx7t ;;
-              *) echo "❌ Unsupported environment: $env"; exit 1 ;;
-            esac
-            echo "value=$v" >> "$GITHUB_OUTPUT"
+    steps:
+      - name: Resolve project postfix
+        id: postfix
+        run: |
+          env="${{ inputs.environment }}"
+          case "$env" in
+            *us-east-2) v=xi7egjwf ;;
+            *us-west-2) v=vfqysx7t ;;
+            *) echo "❌ Unsupported environment: $env"; exit 1 ;;
+          esac
+          echo "value=$v" >> "$GITHUB_OUTPUT"
 
   verify-linting:
     runs-on: ubuntu-latest
