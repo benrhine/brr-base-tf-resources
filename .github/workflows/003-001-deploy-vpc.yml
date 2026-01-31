@@ -24,7 +24,7 @@ on:
           - test / us-west-2
           - staging
           - prod
-        default: dev/us-east-2
+        default: dev / us-east-2
       environment-prefix:
         description: "Should resources be prefixed with environment?"
         required: true
