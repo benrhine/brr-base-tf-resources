@@ -11,36 +11,33 @@ on:
         description: "Custom Id"
         required: false
         default: "001"
-      project-postfix:
-        description: "Random string applied to the end of resource names for uniqueness - should match S3 bucket"
-        required: true
-        type: choice
-        options:
-          - xi7egjwf
-          - vfqysx7t
-        default: xi7egjwf
-      aws-region:
-        description: "Which region is being deployed to"
-        required: false
-        type: choice
-        options:
-          - us-east-2
-          - us-west-2
-        default: us-east-2
       environment:
-        description: "Target Environment"
+        description: "Target Environment and Region"
         required: false
         type: choice
         options:
-          - dev
-          - test
+          - dev / all
+          - dev / us-east-2
+          - dev / us-west-2
+          - test / all
+          - test / us-east-2
+          - test / us-west-2
           - staging
           - prod
+        default: dev/us-east-2
       environment-prefix:
         description: "Should resources be prefixed with environment?"
         required: true
         type: boolean
         default: false
+      custom-state-path:
+        description: "Are you using a custom S3 state path (project postfix)? Enter value in following field if true."
+        required: true
+        type: boolean
+        default: false
+      custom-postfix:
+        description: "A unique random value applied to the end of resources. This will only be used if the custom state path is true. Only use this if you deeply understand what you are doing."
+        required: false
       vpc-cidr-block:
         description: "VPC Cidr block"
         required: false
@@ -76,14 +73,72 @@ permissions:
 
 jobs:
 
-  terraform-deploy-us-east-2:
-    if: ${{ inputs.aws-region == 'us-east-2' }}
+  validate-input:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/us-east-2
+    outputs:
+      project_postfix: ${{ steps.postfix.outputs.value }}
+      aws_region: ${{ steps.region.outputs.value }}
+      environment: ${{ steps.environment.outputs.value }}
 
     steps:
+      - name: Resolve project postfix
+        id: postfix
+        run: |
+          input_env="${{ inputs.environment }}"
+
+          if [[ "$input_env" == *all* ]]; then
+            echo "value=all" >> "$GITHUB_OUTPUT"
+          else
+            case "$input_env" in
+              *us-east-2) v=xi7egjwf ;;
+              *us-west-2) v=vfqysx7t ;;
+              *) echo "❌ Non-existent postfix: $input_env"; exit 1 ;;
+            esac
+            echo "value=$v" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve region
+        id: region
+        run: |
+          input_env="${{ inputs.environment }}"
+
+          if [[ "$input_env" == *all* ]]; then
+            echo "value=all" >> "$GITHUB_OUTPUT"
+          else
+            case "$input_env" in
+              *us-east-2) v=us-east-2 ;;
+              *us-west-2) v=us-west-2 ;;
+              *) echo "❌ Unsupported region: $input_env"; exit 1 ;;
+            esac
+            echo "value=$v" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve environment
+        id: environment
+        run: |
+          input_env="${{ inputs.environment }}"  
+
+          case "$input_env" in
+            dev/*)  v=dev ;;
+            test/*) v=test ;;
+            *) echo "❌ Unsupported environment: $input_env" exit 1 ;;
+          esac
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+
+  terraform-deploy-us-east-2:
+    if: ${{ needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all' }}
+    needs: [ validate-input ]
+    runs-on: ubuntu-latest
+#    defaults:
+#      run:
+#        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/us-east-2
+
+    steps:
+      - name: Set region for job
+        id: region
+        run: |
+          echo "value=us-east-2" >> "$GITHUB_OUTPUT"
+
       - name: Checkout repository
         uses: actions/checkout@v5
 
@@ -96,6 +151,7 @@ jobs:
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
 
       - name: Copy ci backend into terraform
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         run: |
           rm -f terraform.tf
           cp ../backend/terraform.tf terraform.tf
@@ -106,6 +162,7 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
@@ -115,6 +172,7 @@ jobs:
             -backend-config=use_lockfile=true
 
       - name: Plan destroy terraform Changes
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         env:
           TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
           TF_VAR_environment: ${{ github.event.inputs.environment }}
@@ -123,6 +181,7 @@ jobs:
         run: terraform plan -destroy
 
       - name: Apply destroy terraform Changes
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         env:
           TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
           TF_VAR_environment: ${{ github.event.inputs.environment }}
@@ -131,13 +190,19 @@ jobs:
         run: terraform destroy -auto-approve
 
   terraform-deploy-us-west-2:
-    if: ${{ inputs.aws-region == 'us-west-2' }}
+    if: ${{ needs.validate-input.outputs.aws_region == 'us-west-2' || needs.validate-input.outputs.aws_region == 'all' }}
+    needs: [ validate-input ]
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/us-west-2
+#    defaults:
+#      run:
+#        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/us-west-2
 
     steps:
+      - name: Set region for job
+        id: region
+        run: |
+          echo "value=us-west-2" >> "$GITHUB_OUTPUT"  
+
       - name: Checkout repository
         uses: actions/checkout@v5
 
@@ -150,6 +215,7 @@ jobs:
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
 
       - name: Copy ci backend into terraform
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         run: |
           rm -f terraform.tf
           cp ../backend/terraform.tf terraform.tf
@@ -160,6 +226,7 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
@@ -169,6 +236,7 @@ jobs:
             -backend-config=use_lockfile=true
 
       - name: Plan destroy terraform Changes
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         env:
           TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
           TF_VAR_environment: ${{ github.event.inputs.environment }}
@@ -177,6 +245,7 @@ jobs:
         run: terraform plan -destroy
 
       - name: Apply destroy terraform Changes
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         env:
           TF_VAR_aws_region: ${{ github.event.inputs.aws-region }}
           TF_VAR_environment: ${{ github.event.inputs.environment }}
