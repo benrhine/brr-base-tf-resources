@@ -237,6 +237,7 @@ jobs:
         id: region-set
         run: |
           echo ${{ steps.region.outputs.value }}
+          echo ${{ needs.validate-input.outputs.project_postfix  }}
 
       - name: Checkout repository
         uses: actions/checkout@v6
