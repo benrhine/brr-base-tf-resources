@@ -226,7 +226,7 @@ jobs:
           fi
 
   terraform-deploy-us-east-2:
-    if: ${{ needs.verify-linting.outputs.checkov_vpc_status == 'fail' &&  ( needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all') }}
+    if: ${{ needs.verify-linting.outputs.checkov_vpc_status == 'success' &&  ( needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all') }}
 
     needs: [validate-input, verify-linting]
     runs-on: ubuntu-latest
@@ -291,7 +291,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: us-west-2
-      POSTFIX: ${{ inputs.custom-state-path == false && 'vfqysx7t' || inputs.custom-postfix }}
+      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_BIALYRAD_POSTFIX || inputs.custom-postfix }}
     defaults:
       run:
         # This is the location in the GitHub project

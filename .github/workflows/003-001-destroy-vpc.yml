@@ -197,7 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: us-west-2
-      POSTFIX: ${{ inputs.custom-state-path == false && 'vfqysx7t' || inputs.custom-postfix }}
+      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_BIALYRAD_POSTFIX || inputs.custom-postfix }}
     defaults:
       run:
         # This is the location in the GitHub project

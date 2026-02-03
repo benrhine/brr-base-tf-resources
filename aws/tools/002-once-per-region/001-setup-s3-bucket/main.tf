@@ -18,7 +18,7 @@ module "s3_tf_state_bucket" {
   #   aws_account                   = data.aws_caller_identity.current.account_id             # Value retrieved in data.tf
   #   project_name                  = var.project_name                                        # Value passed in via variables.tf
   # Custom defined value
-  create_bucket_name  = "${var.framework_prefix}-state-${var.project_postfix}"
+  create_bucket_name  = "${var.framework_prefix}-state-${random_string.suffix.result}"
   s3_tags_environment = var.tag_environment_tools # Value passed in via variables.tf
   s3_tags_origination = var.tag_origination_repo
   s3_tags_project     = var.project_name
@@ -30,4 +30,11 @@ resource "aws_s3_bucket_versioning" "versioning_tf_state" {
   versioning_configuration {
     status = "Enabled"
   }
+}
+
+resource "github_actions_secret" "env_secret" {
+  repository = var.git_repo_name
+  # environment     = var.current_env
+  secret_name     = "${upper(var.current_env)}_${upper(random_string.suffix.result)}_POSTFIX"
+  plaintext_value = random_string.suffix.result
 }

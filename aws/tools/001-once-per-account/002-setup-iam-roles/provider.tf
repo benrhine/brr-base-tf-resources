@@ -8,17 +8,7 @@ provider "aws" {
   profile = "brr-tools-admin"
 }
 
-# provider "aws" {
-#   alias   = "brr-np"
-#   region  = "us-east-2"
-#   profile = "brr-np-admin"
-# }
-
 provider "github" {
   owner = "benrhine"
   token = var.github_token
 }
-
-# TODO
-# I believe these will have to be modified to receive client/secret from buildspec
-# only reason the main one works this way is because it is initially executed from local

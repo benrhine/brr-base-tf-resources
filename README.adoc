@@ -71,6 +71,10 @@ Some of this can be remediated by only executing in CI and using OpenTofu instea
 
 Currently, there is some variation in how workflows work, being that this is a personal project not all workflow operations have been extended to all files.
 
+=== Static Analysis
+
+This job runs TFLint, Trivy (TFSec), and Checkov. This runs on every push for all projects and all other project execution should be dependent on this Workflow passing.
+
 === VPC Deploy / Destroy
 
 This workflow pair is probably the most built out and demonstrates a number of additional configuration that is not currently built into all the other jobs.
@@ -85,6 +89,14 @@ Good or bad I have created the example here for reference.
 
 [NOTE]
 The destroy workflow does not check the linting results as there is no reason for it to care. It will just go through and destroy the necessary resources.
+
+=== EKS Deploy / Destroy
+
+
+=== Nginx Deploy / Destroy
+
+
+=== ArgoCD Deploy / Destroy
 
 == Known Issues
 

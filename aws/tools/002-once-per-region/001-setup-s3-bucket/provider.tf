@@ -7,3 +7,8 @@ provider "aws" {
   # shared_config_files = ["~/.aws/config"]
   profile = "brr-tools-admin"
 }
+
+provider "github" {
+  owner = "benrhine"
+  token = var.github_token
+}

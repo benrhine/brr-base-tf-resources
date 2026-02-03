@@ -6,7 +6,8 @@ module "github_oidc_ci_assume_role" {
   source = "git::https://github.com/benrhine/brr-iam-roles-module.git?ref=v0.0.1.1" # Where to find the module
   ######################################################################################################################   # Value passed in via variables.tf
   # iam_role_name            = "${var.iam_role_name}_${local.convert_to_underscores}"
-  iam_role_name          = "${var.iam_role_name}_${random_string.suffix.result}"
+  # iam_role_name          = "${var.iam_role_name}_${random_string.suffix.result}"
+  iam_role_name          = var.iam_role_name # I am not applying the postfix as these roles should be global
   iam_role_description   = "This is the base CI role that will be assumed"
   iam_assume_role_policy = data.aws_iam_policy_document.github_oidc_ci_assume_role.json
   iam_tags_environment   = var.tag_environment
@@ -29,7 +30,8 @@ module "admin_assume_role" {
   source = "git::https://github.com/benrhine/brr-iam-roles-module.git?ref=v0.0.1.1" # Where to find the module
   ######################################################################################################################   # Value passed in via variables.tf
   # iam_role_name            = "${var.iam_role_name}_${local.convert_to_underscores}"
-  iam_role_name          = "${var.iam_role_name_2}_${random_string.suffix.result}"
+  # iam_role_name          = "${var.iam_role_name_2}_${random_string.suffix.result}"
+  iam_role_name          = var.iam_role_name_2 # I am not applying the postfix as these roles should be global
   iam_role_description   = "This is the admin role that will be assumed"
   iam_assume_role_policy = data.aws_iam_policy_document.admin_assume_role.json
   iam_tags_environment   = var.tag_environment
