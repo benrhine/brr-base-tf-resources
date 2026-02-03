@@ -67,6 +67,14 @@ Some of this can be remediated by only executing in CI and using OpenTofu instea
 
 === Directory structure
 
+== GitHub Workflows
+
+Currently, there is some variation in how workflows work, being that this is a personal project not all workflow operations have been extended to all files.
+
+=== VPC Deploy / Destroy
+
+
+
 == Known Issues
 
 * common - node group is not created or fails to attach to the cluster

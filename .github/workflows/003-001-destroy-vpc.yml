@@ -197,11 +197,6 @@ jobs:
         working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}
 
     steps:
-      - name: Set region for job
-        id: region
-        run: |
-          echo "value=us-west-2" >> "$GITHUB_OUTPUT"  
-
       - name: Checkout repository
         uses: actions/checkout@v5
 
