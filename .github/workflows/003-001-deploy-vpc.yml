@@ -254,13 +254,15 @@ jobs:
 
     steps:
 #       maybe these can be set with a ternary between the single and multiple values above
+
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
       - name: Set region for job
         id: region
         run: |
           echo "${{env.REGION}}"
-
-      - name: Checkout repository
-        uses: actions/checkout@v6
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v5.0.0
