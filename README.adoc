@@ -77,7 +77,14 @@ This workflow pair is probably the most built out and demonstrates a number of a
 
 The deploy job verifies that the linting results passed and that the input from the user executing the job is valid prior to creating the vpc(s).
 
-Additionally, there is an environment "all" option which will allow you to deploy to all configured regions for a given environment. I.e. if dev is configured to deploy to us-east-2 and us-west-2 you can select the `dev / all` option and deploy to both at the same time.
+Additionally, there is an environment `all` option which will allow you to deploy to all configured regions for a given environment. I.e. if dev is configured to deploy to us-east-2 and us-west-2 you can select the `dev / all` option and deploy to both at the same time.
+
+While the `all` option is semi convenient for me, I am unsure if this is or would be a good idea for a production level setup. This option required a fair amount of thinking and introduced a number of edge cases and hard coded values into the GH Workflow that would otherwise have not existed. I am not confident that the extra work and complexity is worth the convenience of having the option available. Especially, considering that deploying to multiple environments at the same time in a work / production system will be an exceptionally rare occurrence.
+
+Good or bad I have created the example here for reference.
+
+[NOTE]
+The destroy workflow does not check the linting results as there is no reason for it to care. It will just go through and destroy the necessary resources.
 
 == Known Issues
 
