@@ -116,13 +116,20 @@ jobs:
       - name: Resolve environment
         id: environment
         run: |
-          input_env="${{ inputs.environment }}"  
+          input_env="${{ inputs.environment }}"
+          echo "DEBUG raw input: [$input_env]"
+          echo "DEBUG hex dump:"
+          echo -n "$input_env" | xxd
+          input_env=$(echo "$input_env" | sed 's/ *\/ */\//')
+          echo "DEBUG after sed: [$input_env]"
 
           case "$input_env" in
-            dev/*)  v=dev ;;
-            test/*) v=test ;;
-            *) echo "❌ Unsupported environment: $input_env" exit 1 ;;
+             dev/*)  v=dev ;;
+             test/*) v=test ;;
+             *) echo "❌ Unsupported environment: $input_env"
+             exit 1 ;;
           esac
+
           echo "value=$v" >> "$GITHUB_OUTPUT"
 
   terraform-deploy-us-east-2:
@@ -163,7 +170,7 @@ jobs:
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}/terraform.tfstate \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ needs.validate-input.outputs.environment }}/${{ env.REGION }}/terraform.tfstate \
             -backend-config=region=${{ env.REGION }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true
@@ -222,7 +229,7 @@ jobs:
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}/terraform.tfstate \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ needs.validate-input.outputs.environment }}/${{ env.REGION }}/terraform.tfstate \
             -backend-config=region=${{ github.event.inputs.aws-region }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true

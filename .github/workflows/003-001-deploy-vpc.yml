@@ -243,11 +243,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Set region for job
-        id: region
-        run: |
-          echo "${{ needs.validate-input.outputs.environment }}"
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v5.1.1
         with:

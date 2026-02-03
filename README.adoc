@@ -75,7 +75,9 @@ Currently, there is some variation in how workflows work, being that this is a p
 
 This workflow pair is probably the most built out and demonstrates a number of additional configuration that is not currently built into all the other jobs.
 
-The deploy job verifies that the linting results passed and that the input from the user executing the job is valid.
+The deploy job verifies that the linting results passed and that the input from the user executing the job is valid prior to creating the vpc(s).
+
+Additionally, there is an environment "all" option which will allow you to deploy to all configured regions for a given environment. I.e. if dev is configured to deploy to us-east-2 and us-west-2 you can select the `dev / all` option and deploy to both at the same time.
 
 == Known Issues
 
