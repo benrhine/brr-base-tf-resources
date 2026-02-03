@@ -116,16 +116,21 @@ jobs:
       - name: Resolve environment
         id: environment
         run: |
-          # Remove spaces around the /
+          input_env="${{ inputs.environment }}"
+          echo "DEBUG raw input: [$input_env]"
+          echo "DEBUG hex dump:"
+          echo -n "$input_env" | xxd
           input_env=$(echo "$input_env" | sed 's/ *\/ */\//')
-          
+          echo "DEBUG after sed: [$input_env]"
+      
           case "$input_env" in
-            dev/*)  v=dev ;;
-            test/*) v=test ;;
-            *) echo "❌ Unsupported environment: $input_env"
-                 exit 1 ;;
+             dev/*)  v=dev ;;
+             test/*) v=test ;;
+             *) echo "❌ Unsupported environment: $input_env"
+             exit 1 ;;
           esac
-          echo "value=$v" >> "$GITHUB_OUTPUT"
+      
+          echo "environment=$v" >> "$GITHUB_OUTPUT"
 
   verify:
     runs-on: ubuntu-latest
