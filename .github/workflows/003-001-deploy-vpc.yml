@@ -253,6 +253,12 @@ jobs:
         working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}
 
     steps:
+#       maybe these can be set with a ternary between the single and multiple values above
+      - name: Set region for job
+        id: region
+        run: |
+          echo "${{env.REGION}}"
+
       - name: Checkout repository
         uses: actions/checkout@v6
 
