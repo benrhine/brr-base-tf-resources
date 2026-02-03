@@ -121,7 +121,8 @@ jobs:
           case "$input_env" in
             dev/*)  v=dev ;;
             test/*) v=test ;;
-            *) echo "❌ Unsupported environment: $input_env" exit 1 ;;
+            *) echo "❌ Unsupported environment: $input_env"
+                 exit 1 ;;
           esac
           echo "value=$v" >> "$GITHUB_OUTPUT"
 
