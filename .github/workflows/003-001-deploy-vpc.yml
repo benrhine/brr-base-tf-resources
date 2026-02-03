@@ -71,12 +71,6 @@ permissions:
   actions: write
   id-token: write
 
-env:
-  AWS_REGION_1: us-east-2
-  AWS_REGION_2: us-west-2
-  S3_US_EAST_2: xi7egjwf
-  S3_US_WEST_2: vfqysx7t
-
 jobs:
 
   validate-input:
@@ -85,8 +79,6 @@ jobs:
       project_postfix: ${{ steps.postfix.outputs.value }}
       aws_region: ${{ steps.region.outputs.value }}
       environment: ${{ steps.environment.outputs.value }}
-      aws_region_1: ${{ steps.postfix-all.outputs.postfix1 }}
-      aws_region_2: ${{ steps.postfix-all.outputs.postfix2 }}
 
     steps:
       - name: Resolve project postfix
@@ -103,19 +95,6 @@ jobs:
               *) echo "❌ Non-existent postfix: $input_env"; exit 1 ;;
             esac
             echo "value=$v" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Resolve project postfix when all
-        id: postfix-all
-        run: |
-          input_env="${{ inputs.environment }}"
-          
-          if [[ "$input_env" == *all* ]]; then
-            set -e
-            read -r p1 p2 <<< "${{ steps.postfix.outputs.value }}"
-        
-            echo "postfix1=$p1" >> "$GITHUB_OUTPUT"
-            echo "postfix2=$p2" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Resolve region
@@ -250,22 +229,15 @@ jobs:
       POSTFIX: ${{ inputs.custom-state-path == false && 'xi7egjwf' || inputs.custom-postfix }}
     defaults:
       run:
+        # This is the location in the GitHub project
         working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}
 
     steps:
-#       maybe these can be set with a ternary between the single and multiple values above
-
-
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Set region for job
-        id: region
-        run: |
-          echo "${{env.REGION}}"
-
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v5.1.1
         with:
           aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
           role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
@@ -273,7 +245,6 @@ jobs:
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
 
       - name: Copy ci backend into terraform
-        working-directory: "aws/tools/003-once-to-many-per-region/001-setup-vpc/$REGION"
         run: |
           rm -f terraform.tf
           cp ../backend/terraform.tf terraform.tf
@@ -284,29 +255,26 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         run: |
           terraform init \
-            -backend-config=bucket="tf-state-${{ steps.postfix.outputs.value }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}/terraform.tfstate \
-            -backend-config=region=${{ steps.region.outputs.value }} \
+            -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ needs.validate-input.outputs.environment }}/${{ env.REGION }}/terraform.tfstate \
+            -backend-config=region=${{ env.REGION }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         env:
-          TF_VAR_aws_region: ${{ steps.region.outputs.value }}
+          TF_VAR_aws_region: ${{ env.REGION }}
           TF_VAR_environment: ${{ needs.validate-input.outputs.environment}}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
         run: terraform plan
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         env:
-          TF_VAR_aws_region: ${{ steps.region.outputs.value }}
-          TF_VAR_environment: ${{ needs.validate-input.outputs.environment}}
+          TF_VAR_aws_region: ${{ env.REGION }}
+          TF_VAR_environment: ${{ needs.validate-input.outputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
         run: terraform apply -auto-approve
@@ -316,21 +284,20 @@ jobs:
     if: ${{ needs.validate-input.outputs.aws_region == 'us-west-2' || needs.validate-input.outputs.aws_region == 'all' }}
     needs: [validate-input]
     runs-on: ubuntu-latest
+    env:
+      REGION: us-east-2
+      POSTFIX: ${{ inputs.custom-state-path == false && 'vfqysx7t' || inputs.custom-postfix }}
     defaults:
       run:
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/us-west-2
+        # This is the location in the GitHub project
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}
 
     steps:
-      - name: Set region for job
-        id: region
-        run: |
-          echo "value=us-west-2" >> "$GITHUB_OUTPUT"
-
       - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v5.1.1
         with:
           aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
           role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
@@ -338,7 +305,7 @@ jobs:
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
 
       - name: Copy ci backend into terraform
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}
         run: |
           rm -f terraform.tf
           cp ../backend/terraform.tf terraform.tf
@@ -349,28 +316,25 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         run: |
           terraform init \
-            -backend-config=bucket="tf-state-${{ github.event.inputs.project-postfix }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}/terraform.tfstate \
-            -backend-config=region=${{ steps.region.outputs.value }} \
+            -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ needs.validate-input.outputs.environment }}/${{ env.REGION }}/terraform.tfstate \
+            -backend-config=region=${{ env.REGION }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         env:
-          TF_VAR_aws_region: ${{ steps.region.outputs.value }}
+          TF_VAR_aws_region: ${{ env.REGION }}
           TF_VAR_environment: ${{ github.event.inputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
         run: terraform plan
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         env:
-          TF_VAR_aws_region: ${{ steps.region.outputs.value }}
+          TF_VAR_aws_region: ${{ env.REGION }}
           TF_VAR_environment: ${{ github.event.inputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
