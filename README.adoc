@@ -73,7 +73,7 @@ Currently, there is some variation in how workflows work, being that this is a p
 
 === VPC Deploy / Destroy
 
-
+This workflow pair is probably the most built out and demonstrates a number of additional configuration that is not currently built into all the other jobs.
 
 == Known Issues
 

@@ -236,6 +236,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Set region for job
+        id: region
+        run: |
+          echo "${{ needs.validate-input.outputs.environment }}"
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v5.1.1
         with:
@@ -258,7 +263,7 @@ jobs:
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}/terraform.tfstate \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ needs.validate-input.outputs.environment }}/${{ env.REGION }}/terraform.tfstate \
             -backend-config=region=${{ env.REGION }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true
@@ -266,7 +271,7 @@ jobs:
       - name: Plan terraform Changes
         env:
           TF_VAR_aws_region: ${{ env.REGION }}
-          TF_VAR_environment: ${{ needs.validate-input.outputs.environment}}
+          TF_VAR_environment: ${{ needs.validate-input.outputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
         run: terraform plan
@@ -318,7 +323,7 @@ jobs:
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}/terraform.tfstate \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ needs.validate-input.outputs.environment }}/${{ env.REGION }}/terraform.tfstate \
             -backend-config=region=${{ env.REGION }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true
