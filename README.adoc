@@ -75,6 +75,8 @@ Currently, there is some variation in how workflows work, being that this is a p
 
 This workflow pair is probably the most built out and demonstrates a number of additional configuration that is not currently built into all the other jobs.
 
+The deploy job verifies that the linting results passed and that the input from the user executing the job is valid.
+
 == Known Issues
 
 * common - node group is not created or fails to attach to the cluster

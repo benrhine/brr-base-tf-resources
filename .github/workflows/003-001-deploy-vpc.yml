@@ -130,7 +130,7 @@ jobs:
              exit 1 ;;
           esac
       
-          echo "environment=$v" >> "$GITHUB_OUTPUT"
+          echo "value=$v" >> "$GITHUB_OUTPUT"
 
   verify:
     runs-on: ubuntu-latest
