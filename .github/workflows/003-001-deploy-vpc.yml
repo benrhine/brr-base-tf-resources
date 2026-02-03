@@ -285,7 +285,7 @@ jobs:
     needs: [validate-input]
     runs-on: ubuntu-latest
     env:
-      REGION: us-east-2
+      REGION: us-west-2
       POSTFIX: ${{ inputs.custom-state-path == false && 'vfqysx7t' || inputs.custom-postfix }}
     defaults:
       run:
