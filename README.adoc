@@ -67,6 +67,14 @@ Some of this can be remediated by only executing in CI and using OpenTofu instea
 
 === Directory structure
 
+== Deployment Instructions
+
+The following is the order in which projects need to be deployed in order to work correctly.
+
+=== 001-once-per-account / 001-setup-oidc-provider
+
+When setting up a new account this is the first project that needs to be executed if you are using GitHub
+
 == GitHub Workflows
 
 Currently, there is some variation in how workflows work, being that this is a personal project not all workflow operations have been extended to all files.

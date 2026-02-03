@@ -132,7 +132,7 @@ jobs:
 
           echo "value=$v" >> "$GITHUB_OUTPUT"
 
-  terraform-deploy-us-east-2:
+  terraform-destroy-us-east-2:
     if: ${{ needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all' }}
     needs: [ validate-input ]
     runs-on: ubuntu-latest
@@ -191,13 +191,13 @@ jobs:
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
         run: terraform destroy -auto-approve
 
-  terraform-deploy-us-west-2:
+  terraform-destroy-us-west-2:
     if: ${{ needs.validate-input.outputs.aws_region == 'us-west-2' || needs.validate-input.outputs.aws_region == 'all' }}
     needs: [ validate-input ]
     runs-on: ubuntu-latest
     env:
       REGION: us-west-2
-      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_BIALYRAD_POSTFIX || inputs.custom-postfix }}
+      POSTFIX: ${{ inputs.custom-state-path == false && 'bialyrad' || inputs.custom-postfix }}
     defaults:
       run:
         # This is the location in the GitHub project
