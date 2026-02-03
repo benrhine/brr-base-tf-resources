@@ -305,7 +305,6 @@ jobs:
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
 
       - name: Copy ci backend into terraform
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}
         run: |
           rm -f terraform.tf
           cp ../backend/terraform.tf terraform.tf
