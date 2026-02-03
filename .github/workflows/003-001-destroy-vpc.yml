@@ -6,7 +6,7 @@ on:
       project-name:
         description: "Custom Name"
         required: false
-        default: "ci_vpc"
+        default: "ci-vpc"
       project-id:
         description: "Custom Id"
         required: false

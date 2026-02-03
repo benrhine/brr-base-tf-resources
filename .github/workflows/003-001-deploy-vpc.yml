@@ -6,7 +6,7 @@ on:
       project-name:
         description: "Custom Name"
         required: false
-        default: "ci_vpc"
+        default: "ci-vpc"
       project-id:
         description: "Custom Id"
         required: false
@@ -226,8 +226,7 @@ jobs:
           fi
 
   terraform-deploy-us-east-2:
-#    if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' && inputs.aws-region == 'us-east-2' }}
-    if: ${{ needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all' }}
+    if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' &&  ( needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all') }}
 
     needs: [validate-input, verify-linting]
     runs-on: ubuntu-latest
@@ -287,8 +286,7 @@ jobs:
         run: terraform apply -auto-approve
 
   terraform-deploy-us-west-2:
-#    if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' && inputs.aws-region == 'us-west-2' }}
-    if: ${{ needs.validate-input.outputs.aws_region == 'us-west-2' || needs.validate-input.outputs.aws_region == 'all' }}
+    if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' && (needs.validate-input.outputs.aws_region == 'us-west-2' || needs.validate-input.outputs.aws_region == 'all') }}
     needs: [validate-input, verify-linting]
     runs-on: ubuntu-latest
     env:
