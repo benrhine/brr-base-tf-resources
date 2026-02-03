@@ -89,7 +89,6 @@ jobs:
           input_env="${{ inputs.environment }}"
           
           if [[ "$input_env" == *all* ]]; then
-#            echo "value=all" >> "$GITHUB_OUTPUT"
                echo "us-east-2=xi7egjwf" >> "$GITHUB_OUTPUT"
                echo "us-west-2=vfqysx7t" >> "$GITHUB_OUTPUT"
           else
