@@ -250,7 +250,7 @@ jobs:
       POSTFIX: ${{ inputs.custom-state-path == false && 'xi7egjwf' || inputs.custom-postfix }}
     defaults:
       run:
-        working-directory: "aws/tools/003-once-to-many-per-region/001-setup-vpc/$REGION"
+        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}
 
     steps:
       - name: Checkout repository
