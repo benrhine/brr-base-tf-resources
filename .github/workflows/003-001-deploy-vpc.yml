@@ -71,6 +71,12 @@ permissions:
   actions: write
   id-token: write
 
+env:
+  AWS_REGION_1: us-east-2
+  AWS_REGION_2: us-west-2
+  S3_US_EAST_2: xi7egjwf
+  S3_US_WEST_2: vfqysx7t
+
 jobs:
 
   validate-input:
@@ -239,28 +245,14 @@ jobs:
 
     needs: [validate-input]
     runs-on: ubuntu-latest
-#    defaults:
-#      run:
-#        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/us-east-2
+    env:
+      REGION: us-east-2
+      POSTFIX: ${{ inputs.custom-state-path == false && 'xi7egjwf' || inputs.custom-postfix }}
+    defaults:
+      run:
+        working-directory: "aws/tools/003-once-to-many-per-region/001-setup-vpc/$REGION"
 
     steps:
-      - name: Set region for job
-        id: region
-        run: |
-          echo "value=us-east-2" >> "$GITHUB_OUTPUT"
-      - name: Set postfix
-        id: postfix
-        run: |
-          echo "value=xi7egjwf" >> "$GITHUB_OUTPUT"
-      - name: Check region is set
-        id: region-set
-        run: |
-          echo ${{ steps.region.outputs.value }}
-          echo ${{ needs.validate-input.outputs.project_postfix  }}
-          echo ${{ steps.postfix.outputs.value }}
-          echo ${{ needs.validate-input.outputs.aws_region_1  }}
-          echo ${{ needs.validate-input.outputs.aws_region_2  }}
-
       - name: Checkout repository
         uses: actions/checkout@v6
 
@@ -273,7 +265,7 @@ jobs:
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
 
       - name: Copy ci backend into terraform
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
+        working-directory: "aws/tools/003-once-to-many-per-region/001-setup-vpc/$REGION"
         run: |
           rm -f terraform.tf
           cp ../backend/terraform.tf terraform.tf
@@ -287,7 +279,7 @@ jobs:
         working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}
         run: |
           terraform init \
-            -backend-config=bucket="tf-state-${{ needs.validate-input.outputs.project_postfix }}" \
+            -backend-config=bucket="tf-state-${{ steps.postfix.outputs.value }}" \
             -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ steps.region.outputs.value }}/terraform.tfstate \
             -backend-config=region=${{ steps.region.outputs.value }} \
             -backend-config=encrypt=true \
