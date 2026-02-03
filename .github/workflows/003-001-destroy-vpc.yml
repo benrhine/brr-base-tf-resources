@@ -197,7 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: us-west-2
-      POSTFIX: ${{ inputs.custom-state-path == false && 'bialyrad' || inputs.custom-postfix }}
+      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_BIALYRAD_POSTFIX || inputs.custom-postfix }}
     defaults:
       run:
         # This is the location in the GitHub project
@@ -230,7 +230,7 @@ jobs:
           terraform init \
             -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
             -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ needs.validate-input.outputs.environment }}/${{ env.REGION }}/terraform.tfstate \
-            -backend-config=region=${{ github.event.inputs.aws-region }} \
+            -backend-config=region=${{ env.REGION }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true
 

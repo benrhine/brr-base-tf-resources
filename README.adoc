@@ -73,7 +73,9 @@ The following is the order in which projects need to be deployed in order to wor
 
 === 001-once-per-account / 001-setup-oidc-provider
 
-When setting up a new account this is the first project that needs to be executed if you are using GitHub
+When setting up a new account this is the first project that needs to be executed if you are using GitHub. This will set up the required Identity Provider within Aws to facilitate the connection. As stated in the title this should be executed once per *ACCOUNT* and has no prerequisites.
+
+
 
 == GitHub Workflows
 
