@@ -79,6 +79,8 @@ jobs:
       project_postfix: ${{ steps.postfix.outputs.value }}
       aws_region: ${{ steps.region.outputs.value }}
       environment: ${{ steps.environment.outputs.value }}
+      aws_region_1: ${{ steps.region.outputs.us-east-2 }}
+      aws_region_2: ${{ steps.region.outputs.us-west-2 }}
 
     steps:
       - name: Resolve project postfix
@@ -87,7 +89,9 @@ jobs:
           input_env="${{ inputs.environment }}"
           
           if [[ "$input_env" == *all* ]]; then
-            echo "value=all" >> "$GITHUB_OUTPUT"
+#            echo "value=all" >> "$GITHUB_OUTPUT"
+               echo "us-east-2=xi7egjwf" >> "$GITHUB_OUTPUT"
+               echo "us-west-2=vfqysx7t" >> "$GITHUB_OUTPUT"
           else
             case "$input_env" in
               *us-east-2) v=xi7egjwf ;;
@@ -243,6 +247,8 @@ jobs:
           echo ${{ steps.region.outputs.value }}
           echo ${{ needs.validate-input.outputs.project_postfix  }}
           echo ${{ steps.postfix.outputs.value }}
+          echo ${{ needs.validate-input.outputs.aws_region_1  }}
+          echo ${{ needs.validate-input.outputs.aws_region_2  }}
 
       - name: Checkout repository
         uses: actions/checkout@v6
