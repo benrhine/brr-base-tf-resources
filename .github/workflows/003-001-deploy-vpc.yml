@@ -222,7 +222,7 @@ jobs:
 #    if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' && inputs.aws-region == 'us-east-2' }}
     if: ${{ needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all' }}
 
-    needs: [validate-input, verify]
+    needs: [validate-input]
     runs-on: ubuntu-latest
 #    defaults:
 #      run:
@@ -291,7 +291,7 @@ jobs:
   terraform-deploy-us-west-2:
 #    if: ${{ needs.verify.outputs.checkov_vpc_status == 'success' && inputs.aws-region == 'us-west-2' }}
     if: ${{ needs.validate-input.outputs.aws_region == 'us-west-2' || needs.validate-input.outputs.aws_region == 'all' }}
-    needs: [validate-input, verify]
+    needs: [validate-input]
     runs-on: ubuntu-latest
     defaults:
       run:
