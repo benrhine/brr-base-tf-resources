@@ -246,8 +246,8 @@ jobs:
           echo ${{ steps.region.outputs.value }}
           echo ${{ needs.validate-input.outputs.project_postfix  }}
           echo ${{ steps.postfix.outputs.value }}
-          echo ${{ needs.validate-input.outputs.aws_region_1  }}
-          echo ${{ needs.validate-input.outputs.aws_region_2  }}
+          echo ${{ needs.validate-input.outputs.value.aws_region_1  }}
+          echo ${{ needs.validate-input.outputs.value.aws_region_2  }}
 
       - name: Checkout repository
         uses: actions/checkout@v6
