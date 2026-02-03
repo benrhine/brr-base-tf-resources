@@ -116,7 +116,8 @@ jobs:
       - name: Resolve environment
         id: environment
         run: |
-          input_env="${{ inputs.environment }}"  
+          # Remove spaces around the /
+          input_env=$(echo "$input_env" | sed 's/ *\/ */\//')
           
           case "$input_env" in
             dev/*)  v=dev ;;
