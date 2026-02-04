@@ -13,5 +13,5 @@ resource "random_string" "suffix" {
 locals {
   resource_prefix   = var.environment_prefix ? "${var.environment}-${var.project_name}-${var.project_id}" : "${var.project_name}-${var.project_id}"
   cluster_admin_sso = var.requires_cluster_admin_role_001
-  cluster_admin_ci  = "${var.requires_cluster_admin_role_002}_${var.project_postfix}"
+  cluster_admin_ci  = var.requires_cluster_admin_role_002
 }

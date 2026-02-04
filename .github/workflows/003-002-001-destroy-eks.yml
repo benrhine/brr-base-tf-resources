@@ -100,7 +100,7 @@ jobs:
           #          TF_VAR_team_name: ${{}}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-          TF_VAR_project_postfix: ${{ github.event.inputs.project-postfix }}
+          TF_VAR_project_postfix: ${{ env.POSTFIX }}
           TF_VAR_environment: ${{ github.event.inputs.environment }}
           TF_VAR_environment_prefix: ${{ github.event.inputs.environment-prefix }}
           TF_VAR_environment_instance_type: ${{ github.event.inputs.environment-instance-type }}
@@ -120,7 +120,7 @@ jobs:
           #          TF_VAR_team_name: ${{}}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-          TF_VAR_project_postfix: ${{ github.event.inputs.project-postfix }}
+          TF_VAR_project_postfix: ${{ env.POSTFIX }}
           TF_VAR_environment: ${{ github.event.inputs.environment }}
           TF_VAR_environment_prefix: ${{ github.event.inputs.environment-prefix }}
           TF_VAR_environment_instance_type: ${{ github.event.inputs.environment-instance-type }}

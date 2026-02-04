@@ -146,7 +146,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: us-east-2
-      POSTFIX: ${{ inputs.custom-state-path == false && 'xi7egjwf' || inputs.custom-postfix }}
+      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_XI7EGJWF_POSTFIX || inputs.custom-postfix }}
     defaults:
       run:
         # This is the location in the GitHub project
