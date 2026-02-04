@@ -150,7 +150,7 @@ jobs:
   terraform-deploy-us-east-2:
     if: ${{ needs.verify-linting.outputs.status == 'success' && ( needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all') }}
 
-    needs: verify-linting
+    needs: [verify-linting, verify-linting]
     runs-on: ubuntu-latest
     env:
       REGION: us-east-2
