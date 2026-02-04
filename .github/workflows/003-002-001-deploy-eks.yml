@@ -163,9 +163,9 @@ jobs:
 
 # WARNING THIS IS CURRENTLY HARD CODED TO US EAST
   terraform-deploy-us-east-2:
-    if: ${{ needs.verify-linting.outputs.status == 'success' && ( needs.validate-input.outputs.aws_region == 'us-east-2') }}
+    if: ${{ needs.verify-linting.outputs.status == 'success' && ( needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all') }}
 
-    needs: [verify-linting, verify-linting]
+    needs: [validate-input, verify-linting]
     runs-on: ubuntu-latest
     env:
       REGION: us-east-2
