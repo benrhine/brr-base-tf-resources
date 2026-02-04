@@ -11,7 +11,7 @@ on:
         description: "Workflow file that generated the artifact"
         required: false
         type: string
-        default: "tf-static-analysis.yml"
+        default: "000-pre-job-static-analysis.yml"
     outputs:
       status:
         description: "Status of the checkov verification (success/failure)"
