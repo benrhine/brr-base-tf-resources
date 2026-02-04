@@ -133,11 +133,6 @@ jobs:
 
       - name: Initialize Terraform
         if: contains(github.workspace, env.S3_TF_KEY)
-        env:
-          POSTFIX: ${{
-            inputs.custom-state-path == true && inputs.custom-postfix ||
-            (matrix.region == 'us-east-2' && secrets.DEV_XI7EGJWF_POSTFIX || secrets.DEV_BIALYRAD_POSTFIX)
-          } }
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ steps.postfix.outputs.value }}" \
