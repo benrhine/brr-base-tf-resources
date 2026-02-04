@@ -144,10 +144,10 @@ jobs:
         run: |
           echo "${{ github.workspace}}"
           echo "${{env.S3_TF_KEY}}"
-          echo "${{contains(github.workspace, env.S3_TF_KEY)}}"
+          echo "${{contains(env.WORKING_DIR, env.S3_TF_KEY)}}"
 
       - name: Initialize Terraform
-        if: contains(github.workspace, env.S3_TF_KEY)
+        if: contains(env.WORKING_DIR, env.S3_TF_KEY)
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ steps.postfix.outputs.value }}" \
