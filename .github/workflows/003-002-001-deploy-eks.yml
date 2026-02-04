@@ -183,12 +183,13 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        run: terraform init \
-          -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
-          -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
-          -backend-config=region=${{ env.REGION }} \
-          -backend-config=encrypt=true \
-          -backend-config=use_lockfile=true
+        run: |
+          terraform init \
+            -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
+            -backend-config=region=${{ env.REGION }} \
+            -backend-config=encrypt=true \
+            -backend-config=use_lockfile=true
 
       - name: Validate Terraform
         run: terraform validate
