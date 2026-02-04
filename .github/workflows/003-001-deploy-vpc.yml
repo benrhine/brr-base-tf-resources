@@ -140,6 +140,12 @@ jobs:
         with:
           terraform_version: 'latest'
 
+      - name: help
+        run: |
+          echo "${{ github.workspace}}"
+          echo "${{env.S3_TF_KEY}}"
+          echo "${{contains(github.workspace, env.S3_TF_KEY)}}"
+
       - name: Initialize Terraform
         if: contains(github.workspace, env.S3_TF_KEY)
         run: |
