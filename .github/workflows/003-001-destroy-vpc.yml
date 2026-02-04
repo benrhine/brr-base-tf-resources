@@ -131,7 +131,7 @@ jobs:
         with:
           terraform_version: 'latest'
 
-      - name: Copy ci backend into terraform
+      - name: help
         run: |
           echo "${{ github.workspace}}"
           echo "${{env.S3_TF_KEY}}"
