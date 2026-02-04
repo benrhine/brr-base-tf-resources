@@ -74,6 +74,9 @@ The following is the order in which projects need to be deployed in order to wor
 [CAUTION]
 Not all projects require a `var-file` but when one is used it is also required to be used in the destroy command.
 
+[CAUTION]
+When deploying locally you will need to have `profile` set in the `provider.tf` _but_ this must *NOT* be present when executing from CI.
+
 .Deploy
 [source, shell]
 ----

@@ -27,7 +27,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Name of the project"
   type        = string
-  default     = "ci_vpc"
+  default     = "ci-kube-argo"
 }
 
 variable "project_id" {
@@ -41,7 +41,7 @@ variable "project_id" {
 variable "project_postfix" {
   description = "Randomly generated value generated when creating initial S3 bucket"
   type        = string
-  default     = "vfqysx7t"
+  default     = "xi7egjwf"
 }
 
 variable "environment" {
