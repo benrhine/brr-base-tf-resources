@@ -1,0 +1,79 @@
+name: Reusable Validate Input
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Target Environment and Region"
+        required: true
+        type: string
+    outputs:
+      environment:
+        description: "Resolved environment (dev, test, staging, prod)"
+        value: ${{ jobs.validate-input.outputs.environment }}
+      regions:
+        description: "JSON array of regions to deploy"
+        value: ${{ jobs.validate-input.outputs.regions }}
+
+jobs:
+  validate-input:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.environment.outputs.value }}
+      regions: ${{ steps.setup-matrix.outputs.regions }}
+
+    steps:
+      - name: Resolve environment
+        id: environment
+        run: |
+          input_env="${{ inputs.environment }}"
+          input_env=$(echo "$input_env" | sed 's/ *\/ */\//')
+          echo "DEBUG after normalization: [$input_env]"
+          
+          case "$input_env" in
+            dev/*|dev)     v=dev ;;
+            test/*|test)   v=test ;;
+            staging)       v=staging ;;
+            prod)          v=prod ;;
+            *) 
+              echo "❌ Unsupported environment: $input_env"
+              exit 1 
+              ;;
+          esac
+          
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+          echo "✅ Environment resolved to: $v"
+
+      - name: Setup deployment matrix
+        id: setup-matrix
+        run: |
+          input_env="${{ inputs.environment }}"
+          input_env=$(echo "$input_env" | sed 's/ *\/ */\//')
+          
+          if [[ "$input_env" == *"/all"* ]]; then
+            # Deploy to both regions
+            regions='["us-east-2", "us-west-2"]'
+            echo "✅ Deploying to both regions: us-east-2, us-west-2"
+          else
+            case "$input_env" in
+              */us-east-2)
+                regions='["us-east-2"]'
+                echo "✅ Deploying to: us-east-2"
+                ;;
+              */us-west-2)
+                regions='["us-west-2"]'
+                echo "✅ Deploying to: us-west-2"
+                ;;
+              staging|prod)
+                # Define your staging/prod region(s) here
+                regions='["us-east-1"]'
+                echo "✅ Deploying to: us-east-1 (staging/prod)"
+                ;;
+              *)
+                echo "❌ Unsupported region in: $input_env"
+                exit 1
+                ;;
+            esac
+          fi
+          
+          echo "regions=$regions" >> "$GITHUB_OUTPUT"

@@ -71,66 +71,18 @@ permissions:
   actions: write
   id-token: write
 
+env:
+  WORKING_DIR: aws/tools/003-once-to-many-per-region/001-setup-vpc
+  S3_TF_KEY: 003-once-to-many-per-region/001-setup-vpc
+#  US_EAST_2_POSTFIX: ${{ secrets.DEV_XI7EGJWF_POSTFIX }}
+#  US_WEST_2_POSTFIX: ${{ secrets.DEV_BIALYRAD_POSTFIX }}
+
 jobs:
 
   validate-input:
-    runs-on: ubuntu-latest
-    outputs:
-      project_postfix: ${{ steps.postfix.outputs.value }}
-      aws_region: ${{ steps.region.outputs.value }}
-      environment: ${{ steps.environment.outputs.value }}
-
-    steps:
-      - name: Resolve project postfix
-        id: postfix
-        run: |
-          input_env="${{ inputs.environment }}"
-          
-          if [[ "$input_env" == *all* ]]; then
-               echo "value=xi7egjwf vfqysx7t" >> "$GITHUB_OUTPUT"
-          else
-            case "$input_env" in
-              *us-east-2) v=xi7egjwf ;;
-              *us-west-2) v=vfqysx7t ;;
-              *) echo "❌ Non-existent postfix: $input_env"; exit 1 ;;
-            esac
-            echo "value=$v" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Resolve region
-        id: region
-        run: |
-          input_env="${{ inputs.environment }}"
-          
-          if [[ "$input_env" == *all* ]]; then
-            echo "value=all" >> "$GITHUB_OUTPUT"
-          else
-            case "$input_env" in
-              *us-east-2) v=us-east-2 ;;
-              *us-west-2) v=us-west-2 ;;
-              *) echo "❌ Unsupported region: $input_env"; exit 1 ;;
-            esac
-            echo "value=$v" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Resolve environment
-        id: environment
-        run: |
-          input_env="${{ inputs.environment }}"
-          echo "DEBUG raw input: [$input_env]"
-          echo "DEBUG hex dump:"
-          echo -n "$input_env" | xxd
-          input_env=$(echo "$input_env" | sed 's/ *\/ */\//')
-          echo "DEBUG after sed: [$input_env]"
-      
-          case "$input_env" in
-             dev/*)  v=dev ;;
-             test/*) v=test ;;
-             *) echo "❌ Unsupported environment: $input_env"
-             exit 1 ;;
-          esac
-      
-          echo "value=$v" >> "$GITHUB_OUTPUT"
+    uses: ./.github/workflows/_reusable-validate-input.yml
+    with:
+      environment: ${{ inputs.environment }}
 
   verify-linting:
      uses: ./.github/workflows/_reusable-static-analysis-verify.yml
@@ -139,18 +91,19 @@ jobs:
        workflow-file: "000-pre-job-static-analysis.yml"
      secrets: inherit
 
-  terraform-deploy-us-east-2:
-    if: ${{ needs.verify-linting.outputs.status == 'success' && ( needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all') }}
-
-    needs: [validate-input, verify-linting]
+  terraform-deploy:
+    if: ${{ needs.verify-linting.outputs.status == 'success' }}
+    needs: [ validate-input, verify-linting ]
     runs-on: ubuntu-latest
-    env:
-      REGION: us-east-2
-      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_XI7EGJWF_POSTFIX || inputs.custom-postfix }}
+
+    strategy:
+      matrix:
+        region: ${{ fromJson(needs.validate-input.outputs.regions) }}
+      fail-fast: false
+
     defaults:
       run:
-        # This is the location in the GitHub project
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}
+        working-directory: ${{ env.WORKING_DIR }}/${{ matrix.region }}
 
     steps:
       - name: Checkout repository
@@ -159,10 +112,10 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v5.1.1
         with:
-          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
-          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
-          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
-          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
+          aws-region: ${{ secrets.DEV_AWS_REGION }}
+          role-to-assume: ${{ secrets.DEV_ROLE }}
+          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.region }}"
+          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }}
 
       - name: Copy ci backend into terraform
         run: |
@@ -175,88 +128,156 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
+        if: contains(github.workspace, env.S3_TF_KEY)
+        env:
+          POSTFIX: ${{
+            inputs.custom-state-path == true && inputs.custom-postfix ||
+            (matrix.region == 'us-east-2' && secrets.DEV_XI7EGJWF_POSTFIX || secrets.DEV_BIALYRAD_POSTFIX)
+          } }
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ needs.validate-input.outputs.environment }}/${{ env.REGION }}/terraform.tfstate \
-            -backend-config=region=${{ env.REGION }} \
+            -backend-config=key=${{ env.S3_TF_KEY }}/${{ matrix.region }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
+            -backend-config=region=${{ matrix.region }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true
 
       - name: Plan terraform Changes
         env:
-          TF_VAR_aws_region: ${{ env.REGION }}
+          TF_VAR_aws_region: ${{ matrix.region }}
           TF_VAR_environment: ${{ needs.validate-input.outputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
         run: terraform plan
 
-      - name: Plan terraform Changes
+      - name: Apply terraform Changes
         env:
-          TF_VAR_aws_region: ${{ env.REGION }}
+          TF_VAR_aws_region: ${{ matrix.region }}
           TF_VAR_environment: ${{ needs.validate-input.outputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
         run: terraform apply -auto-approve
 
-  terraform-deploy-us-west-2:
-    if: ${{ needs.verify-linting.outputs.status == 'success' && (needs.validate-input.outputs.aws_region == 'us-west-2' || needs.validate-input.outputs.aws_region == 'all') }}
-    needs: [validate-input, verify-linting]
-    runs-on: ubuntu-latest
-    env:
-      REGION: us-west-2
-      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_BIALYRAD_POSTFIX || inputs.custom-postfix }}
-    defaults:
-      run:
-        # This is the location in the GitHub project
-        working-directory: aws/tools/003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v5.1.1
-        with:
-          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
-          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
-          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
-          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
-
-      - name: Copy ci backend into terraform
-        run: |
-          rm -f terraform.tf
-          cp ../backend/terraform.tf terraform.tf
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3.1.2
-        with:
-          terraform_version: 'latest'
-
-      - name: Initialize Terraform
-        run: |
-          terraform init \
-            -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
-            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ needs.validate-input.outputs.environment }}/${{ env.REGION }}/terraform.tfstate \
-            -backend-config=region=${{ env.REGION }} \
-            -backend-config=encrypt=true \
-            -backend-config=use_lockfile=true
-
-      - name: Plan terraform Changes
-        env:
-          TF_VAR_aws_region: ${{ env.REGION }}
-          TF_VAR_environment: ${{ github.event.inputs.environment }}
-          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-        run: terraform plan
-
-      - name: Plan terraform Changes
-        env:
-          TF_VAR_aws_region: ${{ env.REGION }}
-          TF_VAR_environment: ${{ github.event.inputs.environment }}
-          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
-        run: terraform apply -auto-approve
+#  terraform-deploy-us-east-2:
+#    if: ${{ needs.verify-linting.outputs.status == 'success' && contains(needs.validate-input.outputs.aws_region, 'us-east-2') }}
+#
+#    needs: [validate-input, verify-linting]
+#    runs-on: ubuntu-latest
+#    env:
+#      REGION: us-east-2
+#      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_XI7EGJWF_POSTFIX || inputs.custom-postfix }}
+#    defaults:
+#      run:
+#        # This is the location in the GitHub project
+#        working-directory: ${{ env.WORKING_DIR }}/${{ env.REGION }}
+#
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v6
+#
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v5.1.1
+#        with:
+#          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
+#          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
+#          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
+#          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
+#
+#      - name: Copy ci backend into terraform
+#        run: |
+#          rm -f terraform.tf
+#          cp ../backend/terraform.tf terraform.tf
+#
+#      - name: Set up Terraform
+#        uses: hashicorp/setup-terraform@v3.1.2
+#        with:
+#          terraform_version: 'latest'
+#
+#      - name: Initialize Terraform
+#        if: contains(github.workspace, env.S3_TF_KEY)
+#        run: |
+#          terraform init \
+#            -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
+#            -backend-config=key=${{ env.S3_TF_KEY }}/${{ env.REGION }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
+#            -backend-config=region=${{ env.REGION }} \
+#            -backend-config=encrypt=true \
+#            -backend-config=use_lockfile=true
+#
+#      - name: Plan terraform Changes
+#        env:
+#          TF_VAR_aws_region: ${{ env.REGION }}
+#          TF_VAR_environment: ${{ needs.validate-input.outputs.environment }}
+#          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+#          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+#        run: terraform plan
+#
+#      - name: Plan terraform Changes
+#        env:
+#          TF_VAR_aws_region: ${{ env.REGION }}
+#          TF_VAR_environment: ${{ needs.validate-input.outputs.environment }}
+#          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+#          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+#        run: terraform apply -auto-approve
+#
+#  terraform-deploy-us-west-2:
+#    if: ${{ needs.verify-linting.outputs.status == 'success' && contains(needs.validate-input.outputs.aws_region, 'us-west-2') }}
+#    needs: [validate-input, verify-linting]
+#    runs-on: ubuntu-latest
+#    env:
+#      REGION: us-west-2
+#      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_BIALYRAD_POSTFIX || inputs.custom-postfix }}
+#    defaults:
+#      run:
+#        # This is the location in the GitHub project
+#        working-directory: ${{ env.WORKING_DIR }}/${{ env.REGION }}
+#
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v6
+#
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v5.1.1
+#        with:
+#          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
+#          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
+#          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
+#          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
+#
+#      - name: Copy ci backend into terraform
+#        run: |
+#          rm -f terraform.tf
+#          cp ../backend/terraform.tf terraform.tf
+#
+#      - name: Set up Terraform
+#        uses: hashicorp/setup-terraform@v3.1.2
+#        with:
+#          terraform_version: 'latest'
+#
+#      - name: Initialize Terraform
+#        if: contains(github.workspace, env.S3_TF_KEY)
+#        run: |
+#          terraform init \
+#            -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
+#            -backend-config=key=${{ env.S3_TF_KEY }}/${{ env.REGION }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
+#            -backend-config=region=${{ env.REGION }} \
+#            -backend-config=encrypt=true \
+#            -backend-config=use_lockfile=true
+#
+#      - name: Plan terraform Changes
+#        env:
+#          TF_VAR_aws_region: ${{ env.REGION }}
+#          TF_VAR_environment: ${{ github.event.inputs.environment }}
+#          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+#          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+#        run: terraform plan
+#
+#      - name: Plan terraform Changes
+#        env:
+#          TF_VAR_aws_region: ${{ env.REGION }}
+#          TF_VAR_environment: ${{ github.event.inputs.environment }}
+#          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+#          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+#        run: terraform apply -auto-approve
 
 
 # https://dev.to/terrateam/building-a-cicd-pipeline-for-terraform-with-github-actions-step-by-step-guide-3dlp

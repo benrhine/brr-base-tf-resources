@@ -68,6 +68,10 @@ permissions:
   actions: write
   id-token: write
 
+env:
+  WORKING_DIR: aws/tools/003-once-to-many-per-region/002-setup-eks/001-eks-std-irsa
+  S3_TF_KEY: 003-once-to-many-per-region/002-setup-eks/001-eks-std-irsa
+
 jobs:
 
   validate-input:
@@ -152,7 +156,7 @@ jobs:
     defaults:
       run:
         # This is the location in the GitHub project
-        working-directory: aws/tools/003-once-to-many-per-region/002-setup-eks/001-eks-std-irsa/${{ env.REGION }}
+        working-directory: ${{ env.WORKING_DIR }}/${{ env.REGION }}
 
     steps:
       - name: Checkout repository
@@ -177,10 +181,11 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
+        if: contains(github.workspace, env.S3_TF_KEY)
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
-            -backend-config=key=003-once-to-many-per-region/002-setup-eks/001-eks-std-irsa/${{ env.REGION }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
+            -backend-config=key=${{ env.S3_TF_KEY }}/${{ env.REGION }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
             -backend-config=region=${{ env.REGION }} \
             -backend-config=encrypt=true \
             -backend-config=use_lockfile=true
