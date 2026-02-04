@@ -128,7 +128,7 @@ jobs:
     defaults:
       run:
         # This is the location in the GitHub project
-        working-directory: aws/tools/003-once-to-many-per-region/002-setup-kubernetes/002-argo
+        working-directory: aws/tools/003-once-to-many-per-region/003-setup-kubernetes/002-argo
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
