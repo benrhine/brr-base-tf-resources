@@ -81,7 +81,7 @@ jobs:
     uses: ./.github/workflows/_reusable-validate-input.yml
     with:
       environment: ${{ inputs.environment }}
-
+      
   terraform-destroy:
     if: ${{ needs.verify-linting.outputs.status == 'success' }}
     needs: [ validate-input ]
@@ -99,6 +99,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Determine postfix
+        id: postfix
+        run: |
+          if [[ "${{ inputs.custom-state-path }}" == "true" ]]; then
+            POSTFIX="${{ inputs.custom-postfix }}"
+          elif [[ "${{ matrix.region }}" == "us-east-2" ]]; then
+            POSTFIX="${{ secrets.DEV_XI7EGJWF_POSTFIX }}"
+          else
+            POSTFIX="${{ secrets.DEV_BIALYRAD_POSTFIX }}"
+          fi
+          echo "value=$POSTFIX" >> "$GITHUB_OUTPUT"
+          echo "Using postfix: $POSTFIX"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v5.1.1
@@ -127,7 +140,7 @@ jobs:
           } }
         run: |
           terraform init \
-            -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
+            -backend-config=bucket="tf-state-${{ steps.postfix.outputs.value }}" \
             -backend-config=key=${{ env.S3_TF_KEY }}/${{ matrix.region }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
             -backend-config=region=${{ matrix.region }} \
             -backend-config=encrypt=true \

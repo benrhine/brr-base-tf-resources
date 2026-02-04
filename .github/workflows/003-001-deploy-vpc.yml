@@ -109,10 +109,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Determine postfix
+        id: postfix
+        run: |
+          if [[ "${{ inputs.custom-state-path }}" == "true" ]]; then
+            POSTFIX="${{ inputs.custom-postfix }}"
+          elif [[ "${{ matrix.region }}" == "us-east-2" ]]; then
+            POSTFIX="${{ secrets.DEV_XI7EGJWF_POSTFIX }}"
+          else
+            POSTFIX="${{ secrets.DEV_BIALYRAD_POSTFIX }}"
+          fi
+          echo "value=$POSTFIX" >> "$GITHUB_OUTPUT"
+          echo "Using postfix: $POSTFIX"
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v5.1.1
         with:
-          aws-region: ${{ secrets.DEV_AWS_REGION }}
+          aws-region: ${{ matrix.region }}
           role-to-assume: ${{ secrets.DEV_ROLE }}
           role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.region }}"
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }}
@@ -129,14 +142,9 @@ jobs:
 
       - name: Initialize Terraform
         if: contains(github.workspace, env.S3_TF_KEY)
-        env:
-          POSTFIX: ${{
-            inputs.custom-state-path == true && inputs.custom-postfix ||
-            (matrix.region == 'us-east-2' && secrets.DEV_XI7EGJWF_POSTFIX || secrets.DEV_BIALYRAD_POSTFIX)
-          } }
         run: |
           terraform init \
-            -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
+            -backend-config=bucket="tf-state-${{ steps.postfix.outputs.value }}" \
             -backend-config=key=${{ env.S3_TF_KEY }}/${{ matrix.region }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
             -backend-config=region=${{ matrix.region }} \
             -backend-config=encrypt=true \
