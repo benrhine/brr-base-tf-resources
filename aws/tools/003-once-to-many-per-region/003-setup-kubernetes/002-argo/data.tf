@@ -2,7 +2,7 @@ data "aws_region" "current" {}
 
 data "aws_availability_zones" "available" {}
 
-
+# THIS IS A PALCE I SHOULD SET THIS TO PULL DETAILS FROM OTHER TFSTATES
 data "aws_eks_cluster" "eks_cluster" {
   # name = "${local.resource_prefix}-eks-cluster-${var.project_postfix}"
   name = "ci_eks_cluster-001-eks-cluster-${var.project_postfix}"
