@@ -104,6 +104,11 @@ jobs:
             echo "value=$v" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Verify postfix
+        id: postfix-verify
+        run: |
+          echo "${{ steps.postfix.outputs.value }}"
+
       - name: Resolve region
         id: region
         run: |
@@ -119,6 +124,11 @@ jobs:
             esac
             echo "value=$v" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Verify region
+        id: region-verify
+        run: |
+          echo "${{ steps.region.outputs.value }}"
 
       - name: Resolve environment
         id: environment
@@ -153,7 +163,7 @@ jobs:
 
 # WARNING THIS IS CURRENTLY HARD CODED TO US EAST
   terraform-deploy-us-east-2:
-    if: ${{ needs.verify-linting.outputs.status == 'success' }}
+    if: ${{ needs.verify-linting.outputs.status == 'success' && ( needs.validate-input.outputs.aws_region == 'us-east-2') }}
 
     needs: [verify-linting, verify-linting]
     runs-on: ubuntu-latest
