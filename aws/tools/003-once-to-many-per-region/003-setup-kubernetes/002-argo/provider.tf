@@ -5,7 +5,7 @@ provider "aws" {
   # alias   = "brr-tools"
   region  = var.aws_region
   # shared_config_files = ["~/.aws/config"]
-  profile = "brr-tools-admin"
+  # profile = "brr-tools-admin"
 }
 
 provider "kubernetes" {
