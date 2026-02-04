@@ -1,4 +1,4 @@
-name: Terraform Destroy Kubernetes ArgoCD ( TOOLS Account )
+name: 003-003-002 Destroy Argo
 on:
   workflow_dispatch:
     inputs:

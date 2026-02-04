@@ -1,4 +1,4 @@
-name: Terraform Destroy Kubernetes Nginx ( TOOLS Account )
+name: 003-003-001 Destroy Nginx
 on:
   workflow_dispatch:
     inputs:
