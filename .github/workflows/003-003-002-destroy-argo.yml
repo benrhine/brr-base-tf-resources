@@ -2,36 +2,121 @@ name: Terraform Destroy Kubernetes ArgoCD ( TOOLS Account )
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Target Environment"
-        required: false
-        type: choice
-        options:
-          - dev
-          - test
-          - staging
-          - prod
       project-name:
         description: "Custom Name"
         required: false
-        type: string
-        default: "ci_vpc"
+        default: "ci-kube-argo"
       project-id:
         description: "Custom Id"
         required: false
-        type: string
         default: "001"
+      environment:
+        description: "Target Environment and Region"
+        required: false
+        type: choice
+        options:
+          - dev / all
+          - dev / us-east-2
+          - dev / us-west-2
+          - test / all
+          - test / us-east-2
+          - test / us-west-2
+          - staging
+          - prod
+        default: dev / us-east-2
+      environment-prefix:
+        description: "Should resources be prefixed with environment?"
+        required: true
+        type: boolean
+        default: false
+      custom-state-path:
+        description: "Are you using a custom S3 state path (project postfix)? Enter value in following field if true."
+        required: true
+        type: boolean
+        default: false
+      custom-postfix:
+        description: "A unique random value applied to the end of resources. This will only be used if the custom state path is true. Only use this if you deeply understand what you are doing."
+        required: false
 
 permissions:
   actions: write
   id-token: write
 
 jobs:
-  terraform:
+
+  validate-input:
     runs-on: ubuntu-latest
+    outputs:
+      project_postfix: ${{ steps.postfix.outputs.value }}
+      aws_region: ${{ steps.region.outputs.value }}
+      environment: ${{ steps.environment.outputs.value }}
+
+    steps:
+      - name: Resolve project postfix
+        id: postfix
+        run: |
+          input_env="${{ inputs.environment }}"
+
+          if [[ "$input_env" == *all* ]]; then
+               echo "value=xi7egjwf vfqysx7t" >> "$GITHUB_OUTPUT"
+          else
+            case "$input_env" in
+              *us-east-2) v=xi7egjwf ;;
+              *us-west-2) v=vfqysx7t ;;
+              *) echo "❌ Non-existent postfix: $input_env"; exit 1 ;;
+            esac
+            echo "value=$v" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve region
+        id: region
+        run: |
+          input_env="${{ inputs.environment }}"
+
+          if [[ "$input_env" == *all* ]]; then
+            echo "value=all" >> "$GITHUB_OUTPUT"
+          else
+            case "$input_env" in
+              *us-east-2) v=us-east-2 ;;
+              *us-west-2) v=us-west-2 ;;
+              *) echo "❌ Unsupported region: $input_env"; exit 1 ;;
+            esac
+            echo "value=$v" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve environment
+        id: environment
+        run: |
+          input_env="${{ inputs.environment }}"
+          echo "DEBUG raw input: [$input_env]"
+          echo "DEBUG hex dump:"
+          echo -n "$input_env" | xxd
+          input_env=$(echo "$input_env" | sed 's/ *\/ */\//')
+          echo "DEBUG after sed: [$input_env]"
+
+          case "$input_env" in
+             dev/*)  v=dev ;;
+             test/*) v=test ;;
+             *) echo "❌ Unsupported environment: $input_env"
+             exit 1 ;;
+          esac
+
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+
+  terraform-destroy-us-east-2:
+    if: ${{ ( needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all') }}
+
+    runs-on: ubuntu-latest
+    env:
+      REGION: us-east-2
+      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_XI7EGJWF_POSTFIX || inputs.custom-postfix }}
+    defaults:
+      run:
+        # This is the location in the GitHub project
+        working-directory: aws/tools/003-once-to-many-per-region/002-setup-kubernetes/002-argo
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v5.0.0
@@ -47,17 +132,19 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        working-directory: aws/tools/ci-kube-argo
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
+            -backend-config=region=${{ env.REGION }} \
+            -backend-config=encrypt=true \
+            -backend-config=use_lockfile=true
 
       - name: Plan destroy terraform Changes
-        working-directory: aws/tools/ci-kube-argo
         run: terraform plan -destroy
 
       - name: Remove HELM issue
-        working-directory: aws/tools/ci-kube-argo
         run: terraform state rm helm_release.argocd
 
       - name: Apply destroy terraform Changes
-        working-directory: aws/tools/ci-kube-argo
         run: terraform destroy -auto-approve

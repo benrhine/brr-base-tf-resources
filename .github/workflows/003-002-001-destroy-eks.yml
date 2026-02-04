@@ -10,20 +10,20 @@ on:
         description: "Custom Id"
         required: false
         default: "001"
-      project-postfix:
-        description: "Random string applied to the end of resource names for uniqueness - should match S3 bucket"
-        required: true
-        default: "xi7egjwf"
       environment:
-        description: "Target Environment"
+        description: "Target Environment and Region"
         required: false
         type: choice
         options:
-          - dev
-          - test
+          - dev / all
+          - dev / us-east-2
+          - dev / us-west-2
+          - test / all
+          - test / us-east-2
+          - test / us-west-2
           - staging
           - prod
-        default: dev
+        default: dev / us-east-2
       environment-prefix:
         description: "Should resources be prefixed with environment?"
         required: true
@@ -69,8 +69,91 @@ permissions:
   id-token: write
 
 jobs:
-  terraform-destroy:
+
+  validate-input:
     runs-on: ubuntu-latest
+    outputs:
+      project_postfix: ${{ steps.postfix.outputs.value }}
+      aws_region: ${{ steps.region.outputs.value }}
+      environment: ${{ steps.environment.outputs.value }}
+
+    steps:
+      - name: Resolve project postfix
+        id: postfix
+        run: |
+          input_env="${{ inputs.environment }}"
+
+          if [[ "$input_env" == *all* ]]; then
+               echo "value=xi7egjwf vfqysx7t" >> "$GITHUB_OUTPUT"
+          else
+            case "$input_env" in
+              *us-east-2) v=xi7egjwf ;;
+              *us-west-2) v=vfqysx7t ;;
+              *) echo "❌ Non-existent postfix: $input_env"; exit 1 ;;
+            esac
+            echo "value=$v" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify postfix
+        id: postfix-verify
+        run: |
+          echo "${{ steps.postfix.outputs.value }}"
+
+      - name: Resolve region
+        id: region
+        run: |
+          input_env="${{ inputs.environment }}"
+
+          if [[ "$input_env" == *all* ]]; then
+            echo "value=all" >> "$GITHUB_OUTPUT"
+          else
+            case "$input_env" in
+              *us-east-2) v=us-east-2 ;;
+              *us-west-2) v=us-west-2 ;;
+              *) echo "❌ Unsupported region: $input_env"; exit 1 ;;
+            esac
+            echo "value=$v" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify region
+        id: region-verify
+        run: |
+          echo "${{ steps.region.outputs.value }}"
+
+      - name: Resolve environment
+        id: environment
+        run: |
+          input_env="${{ inputs.environment }}"
+          echo "DEBUG raw input: [$input_env]"
+          echo "DEBUG hex dump:"
+          echo -n "$input_env" | xxd
+          input_env=$(echo "$input_env" | sed 's/ *\/ */\//')
+          echo "DEBUG after sed: [$input_env]"
+
+          case "$input_env" in
+             dev/*)  v=dev ;;
+             test/*) v=test ;;
+             *) echo "❌ Unsupported environment: $input_env"
+             exit 1 ;;
+          esac
+
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Verify environment
+        id: environment-verify
+        run: |
+          echo "${{ steps.environment.outputs.value }}"
+
+  terraform-destroy-us-east-2:
+    runs-on: ubuntu-latest
+    env:
+      REGION: us-east-2
+      POSTFIX: ${{ inputs.custom-state-path == false && secrets.DEV_XI7EGJWF_POSTFIX || inputs.custom-postfix }}
+    defaults:
+      run:
+        # This is the location in the GitHub project
+        working-directory: aws/tools/003-once-to-many-per-region/002-setup-eks/001-eks-std-irsa/${{ env.REGION }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -83,17 +166,26 @@ jobs:
           role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
 
+      - name: Copy ci backend into terraform
+        run: |
+          rm -f terraform.tf
+          cp ../backend/terraform.tf terraform.tf
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3.1.2
         with:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        working-directory: aws/tools/ci-eks-cluster
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
+            -backend-config=key=003-once-to-many-per-region/001-setup-vpc/${{ env.REGION }}/${{ needs.validate-input.outputs.environment }}/terraform.tfstate \
+            -backend-config=region=${{ env.REGION }} \
+            -backend-config=encrypt=true \
+            -backend-config=use_lockfile=true
 
       - name: Plan destroy terraform Changes
-        working-directory: aws/tools/ci-eks-cluster
         env:
           #          TF_VAR_org_name_abv: ${{}}
           #          TF_VAR_org_name_full: ${{}}
@@ -113,7 +205,6 @@ jobs:
         run: terraform plan -destroy
 
       - name: Apply destroy terraform Changes
-        working-directory: aws/tools/ci-eks-cluster
         env:
           #          TF_VAR_org_name_abv: ${{}}
           #          TF_VAR_org_name_full: ${{}}
