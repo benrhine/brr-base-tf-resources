@@ -231,7 +231,7 @@ jobs:
 #          fi
 
   terraform-deploy-us-east-2:
-    if: ${{ needs.verify-linting.outputs.checkov_vpc_status == 'success' &&  ( needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all') }}
+    if: ${{ needs.verify-linting.outputs.status == 'success' &&  ( needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all') }}
 
     needs: [validate-input, verify-linting]
     runs-on: ubuntu-latest
@@ -291,7 +291,7 @@ jobs:
         run: terraform apply -auto-approve
 
   terraform-deploy-us-west-2:
-    if: ${{ needs.verify-linting.outputs.checkov_vpc_status == 'success' && (needs.validate-input.outputs.aws_region == 'us-west-2' || needs.validate-input.outputs.aws_region == 'all') }}
+    if: ${{ needs.verify-linting.outputs.status == 'success' && (needs.validate-input.outputs.aws_region == 'us-west-2' || needs.validate-input.outputs.aws_region == 'all') }}
     needs: [validate-input, verify-linting]
     runs-on: ubuntu-latest
     env:
