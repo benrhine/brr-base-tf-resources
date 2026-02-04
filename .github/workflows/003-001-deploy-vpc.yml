@@ -133,7 +133,7 @@ jobs:
           echo "value=$v" >> "$GITHUB_OUTPUT"
 
   verify-linting:
-     uses: ./.github/workflows/reusable/static-analysis-verify.yml
+     uses: ./.github/workflows/_reusable-static-analysis-verify.yml
      with:
        artifact-name: "checkov-001-setup-vpc"
        workflow-file: "000-pre-job-static-static-analysis.yml"
