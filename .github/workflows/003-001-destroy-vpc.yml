@@ -152,6 +152,7 @@ jobs:
           TF_VAR_environment: ${{ needs.validate-input.outputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+          TF_VAR_project_postfix: ${{ steps.postfix.outputs.value }}
         run: terraform plan -destroy
 
       - name: Destroy terraform Changes
@@ -160,6 +161,7 @@ jobs:
           TF_VAR_environment: ${{ needs.validate-input.outputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
           TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+          TF_VAR_project_postfix: ${{ steps.postfix.outputs.value }}
         run: terraform destroy -auto-approve
 
 #  terraform-destroy-us-east-2:

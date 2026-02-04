@@ -158,18 +158,20 @@ jobs:
 
       - name: Plan terraform Changes
         env:
-          TF_VAR_aws_region: ${{ matrix.region }}
-          TF_VAR_environment: ${{ needs.validate-input.outputs.environment }}
-          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+          TF_VAR_aws_region:      ${{ matrix.region }}
+          TF_VAR_environment:     ${{ needs.validate-input.outputs.environment }}
+          TF_VAR_project_name:    ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id:      ${{ github.event.inputs.project-id }}
+          TF_VAR_project_postfix: ${{ steps.postfix.outputs.value }}
         run: terraform plan
 
       - name: Apply terraform Changes
         env:
-          TF_VAR_aws_region: ${{ matrix.region }}
-          TF_VAR_environment: ${{ needs.validate-input.outputs.environment }}
-          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
-          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+          TF_VAR_aws_region:      ${{ matrix.region }}
+          TF_VAR_environment:     ${{ needs.validate-input.outputs.environment }}
+          TF_VAR_project_name:    ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id:      ${{ github.event.inputs.project-id }}
+          TF_VAR_project_postfix: ${{ steps.postfix.outputs.value }}
         run: terraform apply -auto-approve
 
 #  terraform-deploy-us-east-2:
