@@ -83,7 +83,6 @@ jobs:
       environment: ${{ inputs.environment }}
       
   terraform-destroy:
-    if: ${{ needs.verify-linting.outputs.status == 'success' }}
     needs: [ validate-input ]
     runs-on: ubuntu-latest
 
