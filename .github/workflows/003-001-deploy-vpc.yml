@@ -125,7 +125,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v5.1.1
         with:
-          aws-region: ${{ matrix.region }}
+          aws-region: ${{ secrets.DEV_AWS_REGION }}
           role-to-assume: ${{ secrets.DEV_ROLE }}
           role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.region }}"
           role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }}
