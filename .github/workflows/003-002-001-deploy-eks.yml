@@ -139,6 +139,11 @@ jobs:
           
           echo "value=$v" >> "$GITHUB_OUTPUT"
 
+      - name: Verify environment
+        id: environment-verify
+        run: |
+          echo "${{ steps.environment.outputs.value }}"
+
   verify-linting:
     uses: ./.github/workflows/_reusable-static-analysis-verify.yml
     with:

@@ -41,9 +41,13 @@ permissions:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        # This is the location in the GitHub project
+        working-directory: aws/tools/003-once-to-many-per-region/002-setup-kubernetes/002-argo
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v5.0.0
@@ -59,11 +63,9 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        working-directory: aws/tools/ci-kube-argo
         run: terraform init
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/ci-kube-argo
         env:
           TF_VAR_environment: ${{ github.event.inputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
@@ -71,7 +73,6 @@ jobs:
         run: terraform plan
 
       - name: Plan terraform Changes
-        working-directory: aws/tools/ci-kube-argo
         env:
           TF_VAR_environment: ${{ github.event.inputs.environment }}
           TF_VAR_project_name: ${{ github.event.inputs.project-name }}
@@ -79,6 +80,5 @@ jobs:
         run: terraform apply -auto-approve
 
       - name: Show Output
-        working-directory: aws/tools/ci-kube-argo
         run: terraform output -json
 
