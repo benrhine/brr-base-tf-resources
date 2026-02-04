@@ -69,25 +69,147 @@ Some of this can be remediated by only executing in CI and using OpenTofu instea
 
 == Deployment Instructions
 
-The following is the order in which projects need to be deployed in order to work correctly.
+The following is the order in which projects need to be deployed in order to work correctly. All projects _can_ be deployed/destroyed manually from your local machine using the following commands or a slight variant ...
+
+[CAUTION]
+Not all projects require a `var-file` but when one is used it is also required to be used in the destroy command.
+
+.Deploy
+[source, shell]
+----
+terraform init
+terraform fmt
+terraform validate
+terraform apply -auto-approve -var-file=us-east-2.tfvars
+----
+
+.Destroy
+[source, shell]
+----
+terraform destroy -auto-approve -var-file=us-east-2.tfvars
+----
+
+However, please be aware some projects expect to be deployed manually while others expect to be deployed via CI process. This project is unique in that it assumes you are setting up a cloud account from scratch so there are a few things that you would not normally see or use in here except in that case.
+
+[NOTE]
+The project name / number will match the GitHub workflow yaml titles. Please be aware, there is some variation in how workflows work, being that this is a personal project not all workflow operations have been extended to all files.
 
 === 001-once-per-account / 001-setup-oidc-provider
 
-When setting up a new account this is the first project that needs to be executed if you are using GitHub. This will set up the required Identity Provider within Aws to facilitate the connection. As stated in the title this should be executed once per *ACCOUNT* and has no prerequisites.
+When setting up a new account this is the first project that needs to be executed if you are using GitHub. This will set up the required Identity Provider within Aws to facilitate the connection. As stated in the title this should be executed once per *ACCOUNT* and has no prerequisites. This also means that it should not be necessary to supply a variables file to this project as this is a global setup.
 
+==== Summary
 
+* Creates an open id connect provider
 
-== GitHub Workflows
+==== Deploy
 
-Currently, there is some variation in how workflows work, being that this is a personal project not all workflow operations have been extended to all files.
+[source, shell]
+----
+terraform init
+terraform fmt
+terraform validate
+terraform apply -auto-approve
+----
+
+Being the very first step this project *MUST* be executed manually and is not configured with a CI job. After this job is executed the state *MUST* be migrated for safe keeping to an S3 bucket but this can not be completed until _after_ step [002-once-per-region / 001-setup-s3-bucket]
+
+==== Destroy
+
+[source, shell]
+----
+ terraform destroy -auto-approve
+----
+
+=== 001-once-per-account / 002-setup-iam-roles
+
+When setting up a new account you will require several IAM roles in order to execute with your Cloud account. This project will create a CI role for GH Workflow execution and an admin role such that if required a true IAM role can be assumed from your SSO user.
+
+[NOTE]
+SSO users are not true IAM roles and have some limitations within Aws that may or may not cause issues depending on your desired actions.
+
+This project has an additional provider for GitHub so that it can create GitHub secrets. This project will set the created CI role arn as a GH secret as well as the expected Aws region and the allowed execution duration of the role. As stated in the title this should be executed once per *ACCOUNT* and has no prerequisites. While this project is a global setup, it is necessary to supply an arguments file in order to supply the GitHub token to the project so that the GH secrets can be created (region does not matter).
+
+==== Summary
+
+* Creates two IAM roles
+** admin_assume_role
+** github_oidc_ci_assume_role
+* Three GitHub action secrets
+** Stores github_oidc_ci_assume_role arn
+** Allowed duration of role session
+** Aws execution region
+
+==== Deploy
+
+[source, shell]
+----
+terraform init
+terraform fmt
+terraform validate
+terraform apply -auto-approve -var-file=us-east-2.tfvars
+----
+
+Being only the second step, this project still *MUST* be executed manually and is not configured with a CI job. After this job is executed the state *MUST* be migrated for safe keeping to an S3 bucket but this can not be completed until _after_ step [002-once-per-region / 001-setup-s3-bucket]
+
+==== Destroy
+
+[source, shell]
+----
+ terraform destroy -auto-approve -var-file=us-east-2.tfvars
+----
+
+=== 002-once-per-region / 001-setup-s3-bucket
+
+This step is probably the most unique in the deployment process. Technically, this step is not limited to a single execution per region but for the intent of this project a single bucket to hold state per region is all that is required. There are also additional steps and several warnings that come after the initial execution of this project. Considering that no S3 bucket is yet configured the initial execution of this project must happen manually. Meaning that for the time being you have introduced state on your local machine. *DO NOT RUN THIS AGAIN FOR A DIFFERENT REGION FROM YOUR LOCAL MACHINE YET! YOU WILL OVERWRITE YOUR CURRENT STATE AND CAUSE ISSUES!*
+
+This project will create a versioned S3 bucket and will create an additional GH secret value that contains the unique bucket postfix for use future project executions. This is done so that all executions in a given regional stack will have the same value as a reference. This ensures if you have to manually go in and edit or clean up resources in Aws it gives you peace of mind that you are not working on something from a different deployment.
+
+Like the projects before for the initial execution you will perform it manually from your local machine. You must provide a variables file to set the region that the bucket is being created in and to pass in the GH token so that the postfix value can be stored in GitHub
+
+==== Summary
+
+* Can be deployed many times with different options in region *BUT* for our purposes should only be deployed once
+* Can be deployed to many regions
+** Given appropriate care is taken around how state is stored, otherwise you will accidentally overwrite the state and cause problems
+* Creates an S3 bucket to hold Terraform state objects
+* Creates GitHub action secret that holds the unique postfix attached to the S3 bucket so this value can be carried throughout the deployment process to help with tracking.
+
+==== Deploy
+
+[source, shell]
+----
+terraform init
+terraform fmt
+terraform validate
+terraform apply -auto-approve -var-file=us-east-2.tfvars
+----
+
+Now, with a S3 bucket finally in place all 3 `tfstate` files from the last 3 steps must be migrated and stored safely in the new bucket. This is especially important for this step `001-setup-s3-bucket` as in order to set up a state bucket in an alternate region you will need to delete your local state and run the project again with a different variables file, and it is super important to not lose the existing state otherwise you will not be able to edit or delete the project resources in the future.
+
+==== Destroy
+
+[source, shell]
+----
+ terraform destroy -auto-approve -var-file=us-east-2.tfvars
+----
+
+=== Pause - MAKE SURE ALL PREVIOUS TFSTATE FILES ARE MIGRATED TO S3
+
+- uncomment s3 backend
+- migrate state
+
+Now, with the odd ball setups in place and the tfstate stored securely we can move on to the higher level resources that can be deployed with the GH Workflows using the CI process.
 
 === Static Analysis
 
-This job runs TFLint, Trivy (TFSec), and Checkov. This runs on every push for all projects and all other project execution should be dependent on this Workflow passing.
+Please be aware that this entire repo is configured with a GH Workflow that runs on push that lints the Terraform in this project. This job runs TFLint, Trivy (TFSec), and Checkov. This runs on every push for all projects and all other project execution should be dependent on this Workflow passing.
 
-=== VPC Deploy / Destroy
+Stated another way, the following deployment jobs that us CI are configured to prevent execution if this step does not pass.
 
-This workflow pair is probably the most built out and demonstrates a number of additional configuration that is not currently built into all the other jobs.
+=== 003-once-to-many-per-region / 001-setup-vpc
+
+This workflow pair is probably the most built out and demonstrates a number of additional configuration that are not currently built into all the other jobs.
 
 The deploy job verifies that the linting results passed and that the input from the user executing the job is valid prior to creating the vpc(s).
 
@@ -97,16 +219,128 @@ While the `all` option is semi convenient for me, I am unsure if this is or woul
 
 Good or bad I have created the example here for reference.
 
+==== Summary
+
+* Can be deployed many times with different options in region
+* Can be deployed to many regions
+* Validates input fields
+* Verifies project linting prior to execution
+* Deploys VPC
+
+[NOTE]
+While this project can be executed locally it is preferable to only execute this code using the provided CI tooling.
+
+==== Deploy
+
+* Execute the `003-001-deploy-vpc.yml`
+* Navigate to project in GitHub > Actions > Left side select > 003-001 Deploy VPC
+* Right hand side > Run workflow dropdown > select options > Run Workflow
+
+==== Destroy
+
+* Execute the `003-001-destroy-vpc.yml`
+* Navigate to project in GitHub > Actions > Left side select > 003-001 Destroy VPC
+* Right hand side > Run workflow dropdown > select options > Run Workflow
+** Make sure the correct name and id are provided in order to remove the correct deployment
+
 [NOTE]
 The destroy workflow does not check the linting results as there is no reason for it to care. It will just go through and destroy the necessary resources.
 
-=== EKS Deploy / Destroy
+=== 003-once-to-many-per-region / 002-setup-eks
 
+[WARNING]
+There are multiple variants of how to get this working, not all of these are 100% working. Please see the individual README's for details.
 
-=== Nginx Deploy / Destroy
+==== Summary
 
+* This workflow *DEPENDS* on the VPC job having executed successfully
+* Can be deployed many times with different options in region
+* Can be deployed to many regions
+* Validates input fields
+* Verifies project linting prior to execution
+* Deploys EKS Cluster
 
-=== ArgoCD Deploy / Destroy
+[NOTE]
+I have identified a total of 8 different variants of how an EKS Cluster can be deployed using Terraform/OpenTofu and have created GH Workflows for 6 of those variants (the 7th in the repo has significant issues currently). All 6 of the GH Workflow variants will at minimum bring an EKS Cluster up successfully. However, the node group attachment success varies by project and is not successful in all cases. Please review the independent project README's for more details
+
+[NOTE]
+While this project can be executed locally it is preferable to only execute this code using the provided CI tooling.
+
+==== Deploy
+
+* Execute the `003-002-XXX-deploy-eks.yml`
+* Navigate to project in GitHub > Actions > Left side select > 003-002-XXX Deploy EKS
+* Right hand side > Run workflow dropdown > select options > Run Workflow
+
+==== Destroy
+
+* Execute the `003-002-XXX-destroy-eks.yml`
+* Navigate to project in GitHub > Actions > Left side select > 003-002-XXX Destroy EKS
+* Right hand side > Run workflow dropdown > select options > Run Workflow
+** Make sure the correct name and id are provided in order to remove the correct deployment
+
+[NOTE]
+The destroy workflow does not check the linting results as there is no reason for it to care. It will just go through and destroy the necessary resources.
+
+=== 003-once-to-many-per-region / 003-setup-kubernetes / 001-nginx
+
+==== Summary
+
+* This workflow *DEPENDS* on the VPC and EKS job having executed successfully
+* Can be deployed many times with different options in region
+* Can be deployed to many regions
+* Validates input fields
+* Verifies project linting prior to execution
+* Deploys Nginx Kubernetes container
+
+[NOTE]
+While this project can be executed locally it is preferable to only execute this code using the provided CI tooling.
+
+==== Deploy
+
+* Execute the `003-003-001-deploy-nginx.yml`
+* Navigate to project in GitHub > Actions > Left side select > 003-003-001 Deploy Nginx
+* Right hand side > Run workflow dropdown > select options > Run Workflow
+
+==== Destroy
+
+* Execute the `003-003-001-destroy-nginx.yml`
+* Navigate to project in GitHub > Actions > Left side select > 003-003-001 Destroy Nginx
+* Right hand side > Run workflow dropdown > select options > Run Workflow
+** Make sure the correct name and id are provided in order to remove the correct deployment
+
+[NOTE]
+The destroy workflow does not check the linting results as there is no reason for it to care. It will just go through and destroy the necessary resources.
+
+=== 003-once-to-many-per-region / 003-setup-kubernetes / 002-argo
+
+==== Summary
+
+* This workflow *DEPENDS* on the VPC and EKS job having executed successfully
+* Can be deployed many times with different options in region
+* Can be deployed to many regions
+* Validates input fields
+* Verifies project linting prior to execution
+* Deploys ArgoCD Kubernetes container
+
+[NOTE]
+While this project can be executed locally it is preferable to only execute this code using the provided CI tooling.
+
+==== Deploy
+
+* Execute the `003-003-002-deploy-argo.yml`
+* Navigate to project in GitHub > Actions > Left side select > 003-003-002 Deploy Argo
+* Right hand side > Run workflow dropdown > select options > Run Workflow
+
+==== Destroy
+
+* Execute the `003-003-002-destroy-argo.yml`
+* Navigate to project in GitHub > Actions > Left side select > 003-003-002 Destroy Argo
+* Right hand side > Run workflow dropdown > select options > Run Workflow
+** Make sure the correct name and id are provided in order to remove the correct deployment
+
+[NOTE]
+The destroy workflow does not check the linting results as there is no reason for it to care. It will just go through and destroy the necessary resources.
 
 == Known Issues
 

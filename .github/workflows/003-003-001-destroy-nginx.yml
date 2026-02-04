@@ -1,0 +1,59 @@
+name: Terraform Destroy Kubernetes Nginx ( TOOLS Account )
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target Environment"
+        required: false
+        type: choice
+        options:
+          - dev
+          - test
+          - staging
+          - prod
+      project-name:
+        description: "Custom Name"
+        required: false
+        type: string
+        default: "ci_vpc"
+      project-id:
+        description: "Custom Id"
+        required: false
+        type: string
+        default: "001"
+
+permissions:
+  actions: write
+  id-token: write
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
+          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
+          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
+          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_version: 'latest'
+
+      - name: Initialize Terraform
+        working-directory: aws/tools/ci-kube-nginx
+        run: terraform init
+
+      - name: Plan destroy terraform Changes
+        working-directory: aws/tools/ci-kube-nginx
+        run: terraform plan -destroy
+
+      - name: Apply destroy terraform Changes
+        working-directory: aws/tools/ci-kube-nginx
+        run: terraform destroy -auto-approve

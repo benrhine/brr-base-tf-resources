@@ -1,0 +1,84 @@
+name: Terraform Deploy Kubernetes ArgoCD ( TOOLS Account )
+on:
+  #  push:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target Environment"
+        required: false
+        type: choice
+        options:
+          - dev
+          - test
+          - staging
+          - prod
+      project-name:
+        description: "Custom Name"
+        required: false
+        default: "ci_kube_argo"
+      project-id:
+        description: "Custom Id"
+        required: false
+        default: "001"
+      kubernetes_namespace:
+        description: "Namespace that will be created and deployed to"
+        required: false
+        default: argocd
+      kubernetes_deploy_type:
+        description: "How do you want to deploy ArgoCD?"
+        required: false
+        type: choice
+        options:
+          - kubernetes
+          - helm
+        default: helm
+
+
+permissions:
+  actions: write
+  id-token: write
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5.0.0
+        with:
+          aws-region: ${{ secrets.DEV_AWS_REGION }}               # REQUIRED
+          role-to-assume: ${{ secrets.DEV_ROLE }}                 # REQUIRED
+          role-session-name: "${{ github.run_id }}-${{ github.run_attempt }}"                      # RECOMMENDED
+          role-duration-seconds: ${{ secrets.DEV_ROLE_DURATION }} # 15 mins - this is the minimum allowable duration  # RECOMMENDED
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_version: 'latest'
+
+      - name: Initialize Terraform
+        working-directory: aws/tools/ci-kube-argo
+        run: terraform init
+
+      - name: Plan terraform Changes
+        working-directory: aws/tools/ci-kube-argo
+        env:
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+        run: terraform plan
+
+      - name: Plan terraform Changes
+        working-directory: aws/tools/ci-kube-argo
+        env:
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+          TF_VAR_project_name: ${{ github.event.inputs.project-name }}
+          TF_VAR_project_id: ${{ github.event.inputs.project-id }}
+        run: terraform apply -auto-approve
+
+      - name: Show Output
+        working-directory: aws/tools/ci-kube-argo
+        run: terraform output -json
+

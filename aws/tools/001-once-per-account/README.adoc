@@ -36,17 +36,15 @@ In addition, this project will also create a true admin IAM role that can be con
 
 Lastly, this project will configure several GitHub secrets. As this feels a bit out of flow the GitHub secret creation may be more appropriate as its own Terraform/OpenTofu project but for the time being I am leaving it here as the secret creation needs access to the newly created role arns.
 
-[NOTE]
-All roles created in this project will have a unique value appended to the end of their name. Preferably this generated value will be passed to all future projects as the `postfix` value to help ensure traceability of when and where values were created.
-
 === Execution
 
 * `terraform init`
 * `terraform fmt`
 * `terraform validate`
-* `terraform apply --auto-approve -var-file=us-east-2.tfvars`
-** To deploy to an alternate region supply a different tfvars file
-** IMPORTANT!!! Make sure postfix is updated with the generated value from `002-setup-iam-roles`
+* `terraform apply --auto-approve -var-file=gh-token.tfvars`
+
+[NOTE]
+The var-file is only supplied here in order to provide the GH token. All resources created by this project are considered *GLOBAL* and are available across region.
 
 === Verification
 

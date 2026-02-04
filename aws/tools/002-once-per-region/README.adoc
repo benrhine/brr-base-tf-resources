@@ -12,6 +12,8 @@ S3 bucket names are truly global, meaning they are global among all Aws users, n
 
 This project must be executed in each region that you want to deploy other infrastructure into. This is to provide the S3 bucket to contain the Terraform/OpenTofu state. In example, if you want to deploy infrastructure to `us-east-2` then you need a bucket in `us-east-2` to hold that state.
 
+Additionally, this project will create a GH action secret variable that holds the unique postfix generated and appended to the S3 bucket for use by later project executions.
+
 === Execution
 
 * `terraform init`
@@ -26,5 +28,19 @@ This project must be executed in each region that you want to deploy other infra
 Search for S3 in Aws Console and navigate to the S3 page.
 
 image::../../../documentation/images/aws-s3-1.png[]
+
+== Additional Information
+
+While everything in this folder is intended to be a once per region execution that is not strictly true. With the correct processes in place this project can be executed multiple times in the same region or across many accounts and regions. The reason for the statement of *ONCE PER REGION* is that due to the nature of how this project must initially be manually executed you could accidentally overwrite your state if you are not careful.
+
+If you do the following this project _can_ be executed multiple times.
+
+* execute the project
+* uncomment / add a Terraform/OpenTofu backend
+* migrate your local state to the S3 bucket which this project created
+* comment out the Terraform/OpenTofu backend
+* delete your local tfstate and all associated non project Terraform files
+* execute the clean project again with different variables to deploy again
+* repeat the process however many times desired.
 
 
