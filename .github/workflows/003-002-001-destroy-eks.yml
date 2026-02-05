@@ -148,7 +148,7 @@ jobs:
         run: |
           echo "${{ steps.environment.outputs.value }}"
 
-  terraform-destroy-us-east-2:
+  terraform-destroy:
     runs-on: ubuntu-latest
     env:
       REGION: us-east-2
@@ -181,7 +181,7 @@ jobs:
           terraform_version: 'latest'
 
       - name: Initialize Terraform
-        if: contains(github.workspace, env.S3_TF_KEY)
+        if: contains(env.WORKING_DIR, env.S3_TF_KEY)
         run: |
           terraform init \
             -backend-config=bucket="tf-state-${{ env.POSTFIX }}" \
