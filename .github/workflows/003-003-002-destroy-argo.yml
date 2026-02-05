@@ -110,6 +110,7 @@ jobs:
   terraform-destroy-us-east-2:
     if: ${{ ( needs.validate-input.outputs.aws_region == 'us-east-2' || needs.validate-input.outputs.aws_region == 'all') }}
 
+    needs: [ validate-input ]
     runs-on: ubuntu-latest
     env:
       REGION: us-east-2
